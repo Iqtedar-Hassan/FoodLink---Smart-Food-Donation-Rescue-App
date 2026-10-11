@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'donor_dashboard.dart';
+import 'ngo_dashboard.dart';
+import 'admin_dashboard.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -101,7 +103,12 @@ class RoleSelectionScreen extends StatelessWidget {
                     description:
                         'Discover available food donations and '
                         'request pickups for people in need.',
-                    onTap: () => _showRoleMessage(context, 'NGO'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NgoDashboard()),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 16),
@@ -112,7 +119,14 @@ class RoleSelectionScreen extends StatelessWidget {
                     description:
                         'Monitor users, donations and '
                         'overall platform activity.',
-                    onTap: () => _showRoleMessage(context, 'Administrator'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdminDashboard(),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 28),

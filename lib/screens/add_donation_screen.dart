@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../models/donation_model.dart';
+import '../services/donation_service.dart';
+
 class AddDonationScreen extends StatefulWidget {
   const AddDonationScreen({super.key});
 
@@ -52,8 +55,19 @@ class _AddDonationScreenState extends State<AddDonationScreen> {
       return;
     }
 
+    final donation = Donation(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      foodName: _foodNameController.text.trim(),
+      foodType: _foodType,
+      quantity: int.parse(_quantityController.text.trim()),
+      location: _locationController.text.trim(),
+      safeUseDate: _expiryDate!,
+    );
+
+    DonationService.addDonation(donation);
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Donation details entered successfully!')),
+      const SnackBar(content: Text('Food donation added successfully!')),
     );
 
     Navigator.pop(context);
