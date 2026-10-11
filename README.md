@@ -1,17 +1,39 @@
-# foodlink
+# FoodLink – Smart Food Donation & Rescue App
 
-A new Flutter project.
+FoodLink is a mobile application designed to reduce food waste by connecting food donors with NGOs and welfare organizations. It provides a simple way to share surplus food and help ensure that usable food reaches people in need.
 
-## Getting Started
+## Objectives
 
-This project is a starting point for a Flutter application.
+- Reduce food waste in local communities.
+- Connect food donors with NGOs and welfare organizations.
+- Make food donation and pickup coordination easier.
+- Prioritize donations according to remaining safe-use time and pickup feasibility.
+- Promote community support and responsible food management.
 
-A few resources to get you started if this is your first Flutter project:
+## User Roles
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+**1. Donor:** Individuals, households, restaurants, bakeries, and shops can share surplus food and manage their donations.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**2. NGO / Welfare Organization:** NGOs can browse available food donations and request pickups to distribute food to people in need.
+
+**3. Administrator:** The administrator monitors users, donations, and overall platform activity.
+
+## Key Features
+
+- User-friendly welcome and role selection screens.
+- Donor dashboard for managing food donations.
+- Food donation submission and management.
+- NGO donation browsing and pickup requests.
+- Donation status tracking.
+- Basic administration and monitoring.
+- Urgency-based donation prioritization to help prevent food from going to waste.
+
+## Technology
+
+FoodLink is being developed using Flutter and Dart. The application focuses on a simple, responsive interface and is initially being tested in a web browser. Backend and database integration are planned for a later development phase.
+
+## Project Vision
+
+FoodLink aims to create a practical connection between surplus food and people who need it. By simplifying donation and pickup coordination, the application seeks to reduce avoidable food waste and support local communities.
+
+**Project Status:** Currently under development as part of a Mobile Application Development academic project.
