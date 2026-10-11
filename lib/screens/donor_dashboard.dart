@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'add_donation_screen.dart';
+import 'my_donations_screen.dart';
+import 'pickup_requests_screen.dart';
+
 class DonorDashboard extends StatelessWidget {
   const DonorDashboard({super.key});
 
@@ -80,7 +84,12 @@ class DonorDashboard extends StatelessWidget {
                 title: 'Add Food Donation',
                 subtitle: 'Share available food with NGOs',
                 onTap: () {
-                  _showMessage(context, 'Add Food Donation');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddDonationScreen(),
+                    ),
+                  );
                 },
               ),
 
@@ -89,7 +98,12 @@ class DonorDashboard extends StatelessWidget {
                 title: 'My Donations',
                 subtitle: 'View your food donations',
                 onTap: () {
-                  _showMessage(context, 'My Donations');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MyDonationsScreen(),
+                    ),
+                  );
                 },
               ),
 
@@ -98,7 +112,12 @@ class DonorDashboard extends StatelessWidget {
                 title: 'Pickup Requests',
                 subtitle: 'Check requests from NGOs',
                 onTap: () {
-                  _showMessage(context, 'Pickup Requests');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PickupRequestsScreen(),
+                    ),
+                  );
                 },
               ),
             ],
