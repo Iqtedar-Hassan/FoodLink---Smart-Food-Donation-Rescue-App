@@ -323,9 +323,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   title: const Text(
                                     'I agree to the basic usage guidance and responsible food donation practices.',
                                   ),
-                                  onChanged: (value) => setState(
-                                    () => _agreed = value ?? false,
-                                  ),
+                                  onChanged: (value) =>
+                                      setState(() => _agreed = value ?? false),
                                 ),
                               ),
                               const SizedBox(height: 24),

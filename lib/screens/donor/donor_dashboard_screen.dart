@@ -135,10 +135,8 @@ class DonorDashboardScreen extends StatelessWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
-                        childAspectRatio: constraints.maxWidth < 220
-                            ? 1.1
-                            : narrow
-                            ? 2
+                        childAspectRatio: narrow
+                            ? (constraints.maxWidth / 116).clamp(0.4, 2.8)
                             : 1.2,
                         children: [
                           SummaryCard(
@@ -181,24 +179,36 @@ class DonorDashboardScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      if (constraints.maxWidth < 440) {
-                        return Column(
+                      if (constraints.maxWidth < 600) {
+                        final actionWidth = (constraints.maxWidth - 10) / 2;
+                        return Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 10,
+                          runSpacing: 10,
                           children: [
-                            for (final action in quickActions) ...[
-                              action,
-                              if (action != quickActions.last)
-                                const SizedBox(height: 10),
-                            ],
+                            for (final action in quickActions)
+                              SizedBox(
+                                width: actionWidth,
+                                height: 104,
+                                child: action,
+                              ),
                           ],
                         );
                       }
                       return Row(
                         children: [
-                          for (var index = 0;
-                              index < quickActions.length;
-                              index++) ...[
+                          for (
+                            var index = 0;
+                            index < quickActions.length;
+                            index++
+                          ) ...[
                             if (index > 0) const SizedBox(width: 10),
-                            Expanded(child: quickActions[index]),
+                            Expanded(
+                              child: SizedBox(
+                                height: 104,
+                                child: quickActions[index],
+                              ),
+                            ),
                           ],
                         ],
                       );
