@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_time_utils.dart';
 import '../../models/food_donation.dart';
 import '../common/status_badge.dart';
+import '../common/urgency_badge.dart';
 
 class DonationCard extends StatelessWidget {
   const DonationCard({super.key, required this.donation, required this.onTap});
@@ -56,6 +57,7 @@ class DonationCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       StatusBadge(status: donation.status.label),
                     ],
                   ),
@@ -65,10 +67,29 @@ class DonationCard extends StatelessWidget {
                     style: const TextStyle(color: AppColors.secondaryText),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    'Safe-use deadline: ${DateTimeUtils.formatForDisplay(donation.safeUseDeadline)}',
-                    style: const TextStyle(color: AppColors.secondaryText),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.event_available_outlined,
+                        size: 14,
+                        color: AppColors.secondaryText,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          'Use by ${DateTimeUtils.formatForDisplay(donation.safeUseDeadline)}'
+                          ' • ${DateTimeUtils.timeLeftLabel(donation.safeUseDeadline)}',
+                          style: const TextStyle(
+                            color: AppColors.secondaryText,
+                            fontSize: 12.5,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  UrgencyBadge(donation: donation),
                 ],
               ),
             ),

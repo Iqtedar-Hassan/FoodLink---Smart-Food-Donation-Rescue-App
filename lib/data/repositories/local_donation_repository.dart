@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/date_time_utils.dart';
 import '../../models/donor.dart';
 import '../../models/food_donation.dart';
 import '../../models/pickup_request.dart';
@@ -14,6 +15,7 @@ class FoodLinkRepository extends ChangeNotifier {
         email: AppConstants.demoEmail,
         phone: '+923001234567',
         password: AppConstants.demoPassword,
+        donorType: 'Restaurant',
       ),
       Donor(
         id: 'donor_2',
@@ -21,6 +23,7 @@ class FoodLinkRepository extends ChangeNotifier {
         email: 'muneeb@foodlink.demo',
         phone: '+923335556677',
         password: 'Pass1234',
+        donorType: 'Household',
       ),
     ];
 
@@ -217,6 +220,7 @@ class FoodLinkRepository extends ChangeNotifier {
     required String email,
     required String phone,
     required String password,
+    String? donorType,
   }) {
     final normalizedEmail = email.trim().toLowerCase();
     final existing = _donors.any(
@@ -235,6 +239,7 @@ class FoodLinkRepository extends ChangeNotifier {
         email: email.trim(),
         phone: phone.trim(),
         password: password,
+        donorType: donorType ?? 'Household',
       ),
     );
     _currentDonor = _donors.last;
@@ -305,8 +310,14 @@ class FoodLinkRepository extends ChangeNotifier {
 
   int get totalDonations => donorDonations.length;
 
+  /// Donations that are currently open for pickup requests: status is
+  /// Available and the safe-use deadline has not passed yet.
   int get availableDonations => donorDonations
-      .where((donation) => donation.status == DonationStatus.available)
+      .where(
+        (donation) =>
+            donation.status == DonationStatus.available &&
+            !DateTimeUtils.isPastDeadline(donation.safeUseDeadline),
+      )
       .length;
 
   int get pendingPickupRequests => donorPickupRequests
@@ -346,7 +357,15 @@ class FoodLinkRepository extends ChangeNotifier {
 
   void cancelDonation(String id) {
     final donation = donationById(id);
-    if (donation == null) return;
+    if (donation == null) {
+      throw StateError('Donation could not be found.');
+    }
+    if (donation.status != DonationStatus.available &&
+        donation.status != DonationStatus.reserved) {
+      throw StateError(
+        'A ${donation.status.label.toLowerCase()} donation can no longer be cancelled.',
+      );
+    }
     donation.status = DonationStatus.cancelled;
     final pendingRequests = requestsForDonation(id)
         .where((request) => request.status == PickupRequestStatus.pending)
@@ -376,6 +395,11 @@ class FoodLinkRepository extends ChangeNotifier {
     if (request.id.isEmpty) {
       throw StateError('Pickup request could not be found.');
     }
+    if (request.status != PickupRequestStatus.pending) {
+      throw StateError(
+        'Only pending requests can be approved. This request is already ${request.status.label.toLowerCase()}.',
+      );
+    }
 
     final donation = donationById(request.donationId);
     if (donation == null) {
@@ -384,6 +408,12 @@ class FoodLinkRepository extends ChangeNotifier {
     if (donation.status == DonationStatus.cancelled) {
       throw StateError(
         'This donation has been cancelled, so its requests cannot be approved.',
+      );
+    }
+    if (donation.status == DonationStatus.collected ||
+        donation.status == DonationStatus.delivered) {
+      throw StateError(
+        'This donation has already been ${donation.status.label.toLowerCase()}.',
       );
     }
 
@@ -424,6 +454,11 @@ class FoodLinkRepository extends ChangeNotifier {
     if (request.id.isEmpty) {
       throw StateError('Pickup request could not be found.');
     }
+    if (request.status != PickupRequestStatus.pending) {
+      throw StateError(
+        'Only pending requests can be rejected. This request is already ${request.status.label.toLowerCase()}.',
+      );
+    }
 
     request.status = PickupRequestStatus.rejected;
     final donation = donationById(request.donationId);
@@ -443,13 +478,27 @@ class FoodLinkRepository extends ChangeNotifier {
     required String fullName,
     required String email,
     required String phone,
+    String? donorType,
   }) {
     if (_currentDonor == null) return;
+
+    final normalizedEmail = email.trim().toLowerCase();
+    final emailTaken = _donors.any(
+      (donor) =>
+          donor.id != _currentDonor!.id &&
+          donor.email.toLowerCase() == normalizedEmail,
+    );
+    if (emailTaken) {
+      throw StateError(
+        'This email is already used by another demo donor account.',
+      );
+    }
 
     final updatedDonor = _currentDonor!.copyWith(
       fullName: fullName,
       email: email,
       phone: phone,
+      donorType: donorType,
     );
 
     final index = _donors.indexWhere((donor) => donor.id == _currentDonor!.id);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../data/repositories/local_donation_repository.dart';
@@ -24,6 +25,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscureConfirmPassword = true;
   bool _agreed = false;
   bool _isSubmitting = false;
+  String _donorType = AppConstants.donorTypes.first;
 
   @override
   void dispose() {
@@ -50,12 +52,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     setState(() => _isSubmitting = true);
 
+    // Simulated processing delay so the loading state is visible in the demo
+    // (a real app would contact a server here).
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+
     try {
       widget.repository.signup(
         fullName: _fullNameController.text,
         email: _emailController.text,
         phone: _phoneController.text,
         password: _passwordController.text,
+        donorType: _donorType,
       );
 
       if (!mounted) return;
@@ -282,16 +289,44 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 onFieldSubmitted: (_) => _submit(),
                               ),
                               const SizedBox(height: 16),
-                              CheckboxListTile(
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                value: _agreed,
-                                title: const Text(
-                                  'I agree to the basic usage guidance and responsible food donation practices.',
+                              DropdownButtonFormField<String>(
+                                initialValue: _donorType,
+                                decoration: const InputDecoration(
+                                  labelText: 'Donor type',
+                                  helperText: 'Optional – tells NGOs what kind of donor you are.',
+                                  helperStyle: TextStyle(
+                                    color: AppColors.secondaryText,
+                                  ),
+                                  prefixIcon: Icon(Icons.storefront_outlined),
+                                  errorMaxLines: 2,
                                 ),
-                                onChanged: (value) =>
-                                    setState(() => _agreed = value ?? false),
+                                items: AppConstants.donorTypes.map((type) {
+                                  return DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() => _donorType = value);
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              Material(
+                                color: AppColors.white,
+                                child: CheckboxListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                  value: _agreed,
+                                  title: const Text(
+                                    'I agree to the basic usage guidance and responsible food donation practices.',
+                                  ),
+                                  onChanged: (value) => setState(
+                                    () => _agreed = value ?? false,
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 24),
                               ElevatedButton(

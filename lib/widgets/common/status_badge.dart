@@ -29,7 +29,9 @@ class StatusBadge extends StatelessWidget {
         color = AppColors.primaryGreen;
     }
 
-    return Container(
+    // AnimatedContainer smoothly transitions the color when a status changes.
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),

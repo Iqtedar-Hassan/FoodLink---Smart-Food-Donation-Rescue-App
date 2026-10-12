@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'donor_dashboard.dart';
+import '../data/repositories/local_donation_repository.dart';
+import '../screens/auth/login_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
-  const RoleSelectionScreen({super.key});
+  const RoleSelectionScreen({super.key, required this.repository});
+
+  final FoodLinkRepository repository;
 
   static const Color primaryGreen = Color(0xFF16845B);
   static const Color darkGreen = Color(0xFF105C40);
@@ -35,7 +38,6 @@ class RoleSelectionScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 12),
-
                   Container(
                     height: 100,
                     width: 100,
@@ -49,9 +51,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       color: primaryGreen,
                     ),
                   ),
-
                   const SizedBox(height: 28),
-
                   const Text(
                     'How would you like to help?',
                     textAlign: TextAlign.center,
@@ -61,9 +61,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       color: darkGreen,
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   const Text(
                     'Choose your role to continue with FoodLink '
                     'and help reduce food waste in your community.',
@@ -74,9 +72,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       color: Colors.black54,
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
                   _RoleCard(
                     icon: Icons.storefront_outlined,
                     title: 'Food Donor',
@@ -87,14 +83,12 @@ class RoleSelectionScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const DonorDashboard(),
+                          builder: (_) => LoginScreen(repository: repository),
                         ),
                       );
                     },
                   ),
-
                   const SizedBox(height: 16),
-
                   _RoleCard(
                     icon: Icons.volunteer_activism_outlined,
                     title: 'NGO / Welfare Organization',
@@ -103,9 +97,7 @@ class RoleSelectionScreen extends StatelessWidget {
                         'request pickups for people in need.',
                     onTap: () => _showRoleMessage(context, 'NGO'),
                   ),
-
                   const SizedBox(height: 16),
-
                   _RoleCard(
                     icon: Icons.admin_panel_settings_outlined,
                     title: 'Administrator',
@@ -114,9 +106,7 @@ class RoleSelectionScreen extends StatelessWidget {
                         'overall platform activity.',
                     onTap: () => _showRoleMessage(context, 'Administrator'),
                   ),
-
                   const SizedBox(height: 28),
-
                   const Text(
                     'Together, we can rescue food and reduce waste.',
                     textAlign: TextAlign.center,
@@ -187,9 +177,7 @@ class _RoleCard extends StatelessWidget {
                 ),
                 child: Icon(icon, size: 30, color: primaryGreen),
               ),
-
               const SizedBox(width: 16),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,9 +202,7 @@ class _RoleCard extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(width: 8),
-
               const Icon(
                 Icons.arrow_forward_ios,
                 size: 17,

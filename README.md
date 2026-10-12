@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # foodlink
 
 A new Flutter project.
@@ -16,7 +16,6 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
-=======
 # FoodLink – Smart Food Donation & Rescue App
 
 FoodLink is a mobile application designed to reduce food waste by connecting food donors with NGOs and welfare organizations. It provides a simple way to share surplus food and help ensure that usable food reaches people in need.
@@ -56,4 +55,4 @@ FoodLink is being developed using Flutter and Dart. The application focuses on a
 FoodLink aims to create a practical connection between surplus food and people who need it. By simplifying donation and pickup coordination, the application seeks to reduce avoidable food waste and support local communities.
 
 **Project Status:** Currently under development as part of a Mobile Application Development academic project.
->>>>>>> origin/iqtedar
+

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../data/repositories/local_donation_repository.dart';
@@ -17,17 +18,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    final donor = widget.repository.currentDonor;
-    if (donor != null) {
-      _nameController.text = donor.fullName;
-      _emailController.text = donor.email;
-      _phoneController.text = donor.phone;
-    }
-  }
+  String _editDonorType = AppConstants.donorTypes.first;
 
   @override
   void dispose() {
@@ -37,18 +28,193 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
     super.dispose();
   }
 
+  void _populateEditForm(
+    String fullName,
+    String email,
+    String phone,
+    String donorType,
+  ) {
+    _nameController.text = fullName;
+    _emailController.text = email;
+    _phoneController.text = phone;
+    _editDonorType = AppConstants.donorTypes.contains(donorType)
+        ? donorType
+        : AppConstants.donorTypes.first;
+  }
+
+  Future<void> _editProfile() async {
+    final donor = widget.repository.currentDonor;
+    if (donor == null) return;
+
+    _populateEditForm(
+      donor.fullName,
+      donor.email,
+      donor.phone,
+      donor.donorType,
+    );
+
+    final formKey = GlobalKey<FormState>();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit profile'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator: (value) =>
+                      Validators.validateRequired(value, 'Full name'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                    errorMaxLines: 2,
+                  ),
+                  validator: Validators.validateEmail,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                    errorMaxLines: 2,
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Phone number is required.';
+                    }
+                    final digits = value.replaceAll(RegExp(r'[^0-9+]'), '');
+                    if (digits.length < 10 || digits.length > 15) {
+                      return 'Enter a valid phone number.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: _editDonorType,
+                  decoration: const InputDecoration(
+                    labelText: 'Donor type',
+                    prefixIcon: Icon(Icons.storefront_outlined),
+                  ),
+                  items: AppConstants.donorTypes.map((type) {
+                    return DropdownMenuItem(value: type, child: Text(type));
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      _editDonorType = value;
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != true || !mounted) return;
+
+    try {
+      widget.repository.updateDonorProfile(
+        fullName: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        donorType: _editDonorType,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = error.toString();
+      const prefix = 'Bad state: ';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message.startsWith(prefix)
+                ? message.substring(prefix.length)
+                : 'Unable to update your profile right now.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text(
+          'You will need to log in again to access donor-only screens.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Log out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    widget.repository.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final donor = widget.repository.currentDonor;
-
-    if (donor == null) {
-      return const Center(child: Text('No active donor session.'));
-    }
-
     return ListenableBuilder(
       listenable: widget.repository,
       builder: (context, _) {
-        final currentDonor = widget.repository.currentDonor ?? donor;
+        final donor = widget.repository.currentDonor;
+
+        if (donor == null) {
+          return const Scaffold(
+            body: Center(child: Text('No active donor session.')),
+          );
+        }
+
         return Scaffold(
           appBar: AppBar(title: const Text('Profile')),
           body: SafeArea(
@@ -60,7 +226,9 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                     radius: 40,
                     backgroundColor: AppColors.lightGreen,
                     child: Text(
-                      currentDonor.fullName.substring(0, 1).toUpperCase(),
+                      donor.fullName.isNotEmpty
+                          ? donor.fullName.substring(0, 1).toUpperCase()
+                          : '?',
                       style: const TextStyle(
                         fontSize: 32,
                         color: AppColors.primaryGreen,
@@ -68,13 +236,14 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Text(
-                    currentDonor.fullName,
+                    donor.fullName,
                     style: const TextStyle(
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Container(
@@ -86,158 +255,72 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                       color: AppColors.lightGreen,
                       borderRadius: BorderRadius.circular(30),
                     ),
-                    child: const Text(
-                      'Donor',
-                      style: TextStyle(
+                    child: Text(
+                      '${donor.donorType} Donor',
+                      style: const TextStyle(
                         color: AppColors.darkGreen,
                         fontWeight: FontWeight.w700,
+                        fontSize: 13,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _ProfileField(label: 'Email', value: currentDonor.email),
-                  _ProfileField(label: 'Phone', value: currentDonor.phone),
-                  _ProfileField(
-                    label: 'Donations published',
-                    value: '${widget.repository.totalDonations}',
                   ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final formKey = GlobalKey<FormState>();
-                            final result = await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: const Text('Edit profile'),
-                                content: Form(
-                                  key: formKey,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      TextFormField(
-                                        controller: _nameController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Full name',
-                                        ),
-                                        validator: (value) =>
-                                            Validators.validateRequired(
-                                              value,
-                                              'Full name',
-                                            ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: _emailController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Email',
-                                        ),
-                                        validator: Validators.validateEmail,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: _phoneController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Phone',
-                                        ),
-                                        validator: (value) {
-                                          if (value == null ||
-                                              value.trim().isEmpty) {
-                                            return 'Phone number is required.';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      if (formKey.currentState!.validate()) {
-                                        Navigator.pop(context, true);
-                                      }
-                                    },
-                                    child: const Text('Save'),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (result == true) {
-                              try {
-                                widget.repository.updateDonorProfile(
-                                  fullName: _nameController.text,
-                                  email: _emailController.text,
-                                  phone: _phoneController.text,
-                                );
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Profile updated successfully.',
-                                    ),
-                                  ),
-                                );
-                              } catch (error) {
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(error.toString())),
-                                );
-                              }
-                            }
-                          },
-                          icon: const Icon(Icons.edit_outlined),
-                          label: const Text('Edit Profile'),
+                        child: _SummaryTile(
+                          label: 'Total',
+                          value: '${widget.repository.totalDonations}',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryTile(
+                          label: 'Available',
+                          value: '${widget.repository.availableDonations}',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryTile(
+                          label: 'Completed',
+                          value: '${widget.repository.completedDonations}',
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 20),
+                  _ProfileField(label: 'Email', value: donor.email),
+                  _ProfileField(label: 'Phone', value: donor.phone),
+                  _ProfileField(label: 'Donor type', value: donor.donorType),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _editProfile,
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('Edit Profile'),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('Log out?'),
-                            content: const Text(
-                              'You will need to log in again to access donor-only screens.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Log out'),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (confirmed == true) {
-                          widget.repository.logout();
-                          if (!context.mounted) return;
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/login',
-                            (route) => false,
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.logout),
+                      onPressed: _logout,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.errorRed,
+                        side: const BorderSide(color: AppColors.errorRed),
+                      ),
+                      icon: const Icon(Icons.logout, size: 18),
                       label: const Text('Logout'),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppConstants.demoDataNote,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: AppColors.secondaryText),
                   ),
                 ],
               ),
@@ -245,6 +328,46 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _SummaryTile extends StatelessWidget {
+  const _SummaryTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryGreen,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.secondaryText,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

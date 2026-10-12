@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:foodlink/main.dart';
+import 'package:foodlink/app.dart';
 
 void main() {
   testWidgets('FoodLink welcome flow shows the app branding', (tester) async {

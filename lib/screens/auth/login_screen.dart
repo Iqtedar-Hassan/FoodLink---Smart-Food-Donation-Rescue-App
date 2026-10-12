@@ -16,12 +16,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: AppConstants.demoEmail);
-  final _passwordController = TextEditingController(
-    text: AppConstants.demoPassword,
-  );
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isSubmitting = false;
+
+  void _fillDemoCredentials() {
+    _emailController.text = AppConstants.demoEmail;
+    _passwordController.text = AppConstants.demoPassword;
+  }
 
   @override
   void dispose() {
@@ -34,6 +37,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
+
+    // Simulated processing delay so the loading state is visible in the demo
+    // (a real app would contact a server here).
+    await Future<void>.delayed(const Duration(milliseconds: 700));
 
     try {
       widget.repository.login(_emailController.text, _passwordController.text);
@@ -179,22 +186,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onFieldSubmitted: (_) => _submit(),
                               ),
                               const SizedBox(height: 14),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Demo credentials: donor@foodlink.demo / Pass1234',
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Forgot Password?'),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
@@ -204,13 +195,32 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: AppColors.lightGreen,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text(
-                                  'Demo donor credentials: donor@foodlink.demo / Pass1234',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: AppColors.darkGreen,
-                                        fontWeight: FontWeight.w600,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Demo donor: ${AppConstants.demoEmail} / ${AppConstants.demoPassword}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: AppColors.darkGreen,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    TextButton(
+                                      onPressed: _fillDemoCredentials,
+                                      style: TextButton.styleFrom(
+                                        visualDensity: VisualDensity.compact,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
+                                      ),
+                                      child: const Text('Fill'),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(height: 22),
