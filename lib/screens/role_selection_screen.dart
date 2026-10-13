@@ -160,51 +160,46 @@ class _RoleCard extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              Container(
-                height: 58,
-                width: 58,
-                decoration: BoxDecoration(
-                  color: AppColors.lightGreen,
-                  borderRadius: BorderRadius.circular(AppTheme.compactRadius),
-                ),
-                child: Icon(icon, size: 30, color: primaryGreen),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: darkGreen,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_ios,
-                size: 17,
-                color: primaryGreen,
-              ),
-            ],
+      child: Row(
+        children: [
+          Container(
+            height: 58,
+            width: 58,
+            decoration: BoxDecoration(
+              color: AppColors.lightGreen,
+              borderRadius: BorderRadius.circular(AppTheme.compactRadius),
+            ),
+            child: Icon(icon, size: 30, color: primaryGreen),
           ),
-        ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: darkGreen,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.arrow_forward_ios, size: 17, color: primaryGreen),
+        ],
+      ),
     );
   }
 }

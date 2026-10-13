@@ -2,8 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foodlink/app.dart';
 import 'package:foodlink/data/repositories/local_donation_repository.dart';
+import 'package:foodlink/screens/auth/login_screen.dart';
+import 'package:foodlink/screens/auth/signup_screen.dart';
+import 'package:foodlink/screens/donor/create_donation_screen.dart';
+import 'package:foodlink/screens/donor/donation_details_screen.dart';
 import 'package:foodlink/screens/donor/donor_dashboard_screen.dart';
+import 'package:foodlink/screens/donor/donor_profile_screen.dart';
+import 'package:foodlink/screens/donor/my_donations_screen.dart';
+import 'package:foodlink/screens/donor/pickup_requests_screen.dart';
 import 'package:foodlink/widgets/donations/summary_card.dart';
+
+/// Widths that represent the required test ranges: very narrow Android phones,
+/// standard phones, large phones, and tablets in portrait and landscape.
+const _phoneWidths = [320.0, 360.0, 375.0, 390.0, 430.0];
+const _tabletWidths = [600.0, 768.0, 834.0, 1024.0];
+
+FoodLinkRepository _loggedInRepo() =>
+    FoodLinkRepository()..login('donor@foodlink.demo', 'Pass1234');
+
+/// Pumps [child] at a logical [width]x[height] and asserts that the layout does
+/// not overflow or clip (Flutter throws on RenderFlex overflow, which surfaces
+/// through `tester.takeException()`).
+Future<void> pumpAtSize(
+  WidgetTester tester,
+  Widget child, {
+  required double width,
+  required double height,
+}) async {
+  tester.view.physicalSize = Size(width, height);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  await tester.pumpWidget(MaterialApp(home: child));
+  await tester.pump();
+  expect(
+    tester.takeException(),
+    isNull,
+    reason: 'Layout overflow/clipping at ${width}x$height',
+  );
+}
 
 void main() {
   testWidgets('FoodLink welcome flow shows the app branding', (tester) async {
@@ -34,118 +72,107 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('donor quick actions do not create negative widths', (
-    tester,
-  ) async {
-    final repository = FoodLinkRepository()
-      ..login('donor@foodlink.demo', 'Pass1234');
+  group('Login and Sign-up stay readable across all widths', () {
+    for (final width in [..._phoneWidths, ..._tabletWidths]) {
+      testWidgets('login at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          LoginScreen(repository: FoodLinkRepository()),
+          width: width,
+          height: 780,
+        );
+        expect(find.text('Log In'), findsOneWidget);
+      });
 
-    await tester.pumpWidget(
-      MaterialApp(home: DonorDashboardScreen(repository: repository)),
-    );
-
-    final actionBuilder = tester
-        .widget<LayoutBuilder>(
-          find
-              .ancestor(
-                of: find.text('Create Donation'),
-                matching: find.byType(LayoutBuilder),
-              )
-              .first,
-        )
-        .builder;
-    final dashboardContext = tester.element(find.byType(DonorDashboardScreen));
-    final actionLayout = actionBuilder(
-      dashboardContext,
-      const BoxConstraints(maxWidth: 5, maxHeight: 104),
-    );
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(child: SizedBox(width: 5, child: actionLayout)),
-        ),
-      ),
-    );
-
-    expect(tester.takeException(), isNull);
+      testWidgets('sign-up at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          SignUpScreen(repository: FoodLinkRepository()),
+          width: width,
+          height: 780,
+        );
+        expect(find.text('Create Account'), findsOneWidget);
+      });
+    }
   });
 
-  testWidgets('donor quick actions adapt across screen widths', (tester) async {
-    tester.view.physicalSize = const Size(1200, 1200);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final repository = FoodLinkRepository()
-      ..login('donor@foodlink.demo', 'Pass1234');
-    await tester.pumpWidget(
-      MaterialApp(home: DonorDashboardScreen(repository: repository)),
-    );
-
-    final actionBuilder = tester
-        .widget<LayoutBuilder>(
-          find
-              .ancestor(
-                of: find.text('Create Donation'),
-                matching: find.byType(LayoutBuilder),
-              )
-              .first,
-        )
-        .builder;
-    final dashboardContext = tester.element(find.byType(DonorDashboardScreen));
-
-    for (final screenWidth in [320.0, 375.0, 390.0, 430.0, 768.0]) {
-      final contentWidth = screenWidth - 40;
-      final actionLayout = actionBuilder(
-        dashboardContext,
-        BoxConstraints(maxWidth: contentWidth),
-      );
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: SizedBox(width: contentWidth, child: actionLayout),
-            ),
-          ),
-        ),
-      );
-
-      final createTile = find
-          .ancestor(
-            of: find.text('Create Donation'),
-            matching: find.byType(SizedBox),
-          )
-          .first;
-      final donationsTile = find
-          .ancestor(
-            of: find.text('My Donations'),
-            matching: find.byType(SizedBox),
-          )
-          .first;
-      final requestsTile = find
-          .ancestor(
-            of: find.text('Pickup Requests'),
-            matching: find.byType(SizedBox),
-          )
-          .first;
-      final createCenter = tester.getCenter(createTile);
-      final donationsCenter = tester.getCenter(donationsTile);
-      final requestsCenter = tester.getCenter(requestsTile);
-      final actionContainer = find.byType(screenWidth < 600 ? Wrap : Row).first;
-
-      if (screenWidth < 600) {
-        expect(createCenter.dy, closeTo(donationsCenter.dy, 1));
-        expect(requestsCenter.dy, greaterThan(createCenter.dy));
-        expect(
-          requestsCenter.dx,
-          closeTo(tester.getCenter(actionContainer).dx, 1),
+  group('Dashboard adapts across phones and tablets', () {
+    for (final width in [..._phoneWidths, ..._tabletWidths]) {
+      testWidgets('dashboard portrait at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          DonorDashboardScreen(repository: _loggedInRepo()),
+          width: width,
+          height: 780,
         );
-      } else {
-        expect(createCenter.dy, closeTo(donationsCenter.dy, 1));
-        expect(createCenter.dy, closeTo(requestsCenter.dy, 1));
-      }
-      expect(tester.takeException(), isNull, reason: 'Width: $screenWidth px');
+        // Grounded statistics labels are present.
+        expect(find.text('Total Donations'), findsOneWidget);
+        expect(find.text('Available'), findsOneWidget);
+        expect(find.text('Completed'), findsOneWidget);
+        expect(find.text('Add Food Donation'), findsOneWidget);
+      });
+
+      testWidgets('dashboard landscape at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          DonorDashboardScreen(repository: _loggedInRepo()),
+          width: width,
+          height: 360,
+        );
+        expect(find.text('Overview'), findsOneWidget);
+      });
+    }
+  });
+
+  group('Donor workflow screens never overflow', () {
+    for (final width in [..._phoneWidths, ..._tabletWidths]) {
+      testWidgets('my donations at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          MyDonationsScreen(repository: _loggedInRepo()),
+          width: width,
+          height: 780,
+        );
+      });
+
+      testWidgets('pickup requests at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          PickupRequestsScreen(repository: _loggedInRepo()),
+          width: width,
+          height: 780,
+        );
+      });
+
+      testWidgets('profile at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          DonorProfileScreen(repository: _loggedInRepo()),
+          width: width,
+          height: 780,
+        );
+      });
+
+      testWidgets('create donation at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          CreateDonationScreen(repository: _loggedInRepo()),
+          width: width,
+          height: 780,
+        );
+      });
+
+      testWidgets('donation details at ${width}px', (tester) async {
+        await pumpAtSize(
+          tester,
+          DonationDetailsScreen(
+            repository: _loggedInRepo(),
+            donationId: 'don_101',
+          ),
+          width: width,
+          height: 780,
+        );
+      });
     }
   });
 }

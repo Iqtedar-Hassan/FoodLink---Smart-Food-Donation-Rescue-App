@@ -30,6 +30,8 @@ class AppCard extends StatelessWidget {
       margin: margin,
       child: Material(
         color: AppColors.white,
+        elevation: 0.5,
+        shadowColor: Colors.black.withValues(alpha: 0.05),
         shape: shape,
         clipBehavior: Clip.antiAlias,
         child: InkWell(

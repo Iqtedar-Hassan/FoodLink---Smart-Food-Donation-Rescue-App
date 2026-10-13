@@ -6,6 +6,14 @@ import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_time_utils.dart';
 import '../../data/repositories/local_donation_repository.dart';
 import '../../models/food_donation.dart';
+import '../../widgets/common/app_text_field.dart';
+
+// Brand palette (consistent with all other screens)
+const Color _green = AppColors.primaryGreen;
+const Color _background = AppColors.warmBackground;
+const Color _textPrimary = Color(0xFF19352A);
+const Color _textSecondary = Color(0xFF738178);
+const Color _border = Color(0xFFE8EDE8);
 
 class CreateDonationScreen extends StatefulWidget {
   const CreateDonationScreen({
@@ -101,19 +109,13 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard this donation?'),
-        content: const Text('The information you entered will not be saved.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Keep editing'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Discard'),
-          ),
-        ],
+      builder: (_) => const _ConfirmDialog(
+        title: 'Discard this donation?',
+        body: 'The information you entered will not be saved.',
+        confirmLabel: 'Discard',
+        confirmColor: Color(0xFFCB4A4A),
+        icon: Icons.delete_outline_rounded,
+        iconColor: Color(0xFFCB4A4A),
       ),
     );
 
@@ -149,6 +151,7 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
   }
 
   void _submit() {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     final existing = _isEditing
@@ -157,7 +160,13 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
 
     if (_isEditing && existing == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Donation could not be found.')),
+        SnackBar(
+          content: const Text('Donation could not be found.'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
       );
       return;
     }
@@ -170,13 +179,16 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
           content: Text(
             'A ${existing.status.label.toLowerCase()} donation can no longer be edited.',
           ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       );
       return;
     }
 
     if (_isEditing) {
-      // copyWith preserves id, donorId, createdAt and current status.
       widget.repository.updateDonation(
         existing!.copyWith(
           foodName: _foodNameController.text.trim(),
@@ -220,6 +232,8 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
               ? 'Donation updated successfully.'
               : 'Donation published successfully.',
         ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
 
@@ -232,114 +246,141 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final margin = AppTheme.horizontalMargin(screenWidth);
+
     return Scaffold(
+      backgroundColor: _background,
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Donation' : 'Create Donation'),
+        backgroundColor: _background,
+        foregroundColor: _textPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        toolbarHeight: 64,
+        titleSpacing: 20,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 38,
+              width: 38,
+              decoration: BoxDecoration(
+                color: _green,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              _isEditing ? 'Edit Donation' : 'Add Food Donation',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: _textPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppTheme.pagePadding),
-              child: Form(
-                key: _formKey,
+            constraints: BoxConstraints(
+              maxWidth: AppTheme.contentMaxWidth(screenWidth),
+            ),
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(margin, 12, margin, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header copy
                     Text(
                       _isEditing
                           ? 'Update your donation'
                           : 'Share your surplus food',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Add the food item, safe-use deadline, and pickup window so NGOs know when to collect.',
-                      style: Theme.of(context).textTheme.bodyLarge
-                          ?.copyWith(color: AppColors.secondaryText),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Food Information',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _foodNameController,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Food name',
-                        hintText: 'e.g. Chicken Rice Bowl',
-                        prefixIcon: Icon(Icons.restaurant_menu_outlined),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: _textPrimary,
+                        letterSpacing: -0.6,
                       ),
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Food name is required.'
-                          : null,
                     ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedCategory,
-                      decoration: const InputDecoration(
-                        labelText: 'Food category',
-                        prefixIcon: Icon(Icons.category_outlined),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Add the food item, safe-use deadline, and pickup window '
+                      'so NGOs know when to collect it.',
+                      style: const TextStyle(
+                        color: _textSecondary,
+                        fontSize: 13,
+                        height: 1.5,
                       ),
-                      items: AppConstants.foodCategories.map((option) {
-                        return DropdownMenuItem(
-                          value: option,
-                          child: Text(option),
-                        );
-                      }).toList(),
-                      validator: (value) => value == null || value.isEmpty
-                          ? 'Please choose a category.'
-                          : null,
-                      onChanged: (value) =>
-                          setState(() => _selectedCategory = value),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 22),
+
+                    // Section 1: Food information
+                    _SectionHeader(number: '1', title: 'Food information'),
+                    const SizedBox(height: 12),
+                    _SectionCard(
                       children: [
-                        Expanded(
-                          child: TextFormField(
+                        AppTextField(
+                          controller: _foodNameController,
+                          label: 'Food name',
+                          hint: 'e.g. Chicken Rice Bowl',
+                          prefixIcon: const Icon(
+                            Icons.restaurant_menu_outlined,
+                          ),
+                          textCapitalization: TextCapitalization.words,
+                          textInputAction: TextInputAction.next,
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Food name is required.'
+                              : null,
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        _DropdownField(
+                          initialValue: _selectedCategory,
+                          labelText: 'Food category',
+                          prefixIcon: Icons.category_outlined,
+                          items: AppConstants.foodCategories,
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Please choose a category.'
+                              : null,
+                          onChanged: (value) =>
+                              setState(() => _selectedCategory = value),
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        _TwoColumn(
+                          first: AppTextField(
                             controller: _quantityController,
+                            label: 'Quantity',
+                            hint: 'e.g. 12',
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: 'Quantity',
-                              hintText: 'e.g. 12',
-                              errorMaxLines: 2,
-                            ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Quantity is required.';
                               }
                               final parsed = num.tryParse(value.trim());
                               if (parsed == null || parsed <= 0) {
-                                return 'Quantity must be greater than zero.';
+                                return 'Must be greater than zero.';
                               }
                               return null;
                             },
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
+                          second: _DropdownField(
                             initialValue: _selectedUnit,
-                            decoration: const InputDecoration(
-                              labelText: 'Unit',
-                              errorMaxLines: 2,
-                            ),
-                            items: AppConstants.quantityUnits.map((option) {
-                              return DropdownMenuItem(
-                                value: option,
-                                child: Text(option),
-                              );
-                            }).toList(),
+                            labelText: 'Unit',
+                            items: AppConstants.quantityUnits,
                             validator: (value) => value == null || value.isEmpty
                                 ? 'Select a unit.'
                                 : null,
@@ -349,60 +390,53 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Deadline and Pickup',
-                      style: Theme.of(context).textTheme.titleLarge,
+                    const SizedBox(height: 22),
+
+                    // Section 2: Deadline and pickup
+                    _SectionHeader(
+                      number: '2',
+                      title: 'Deadline and pickup',
+                      subtitle: 'Nearby deadlines are highlighted so NGOs can act fast.',
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Earlier safe-use deadlines are highlighted so NGOs can prioritise collections.',
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: AppColors.secondaryText),
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      readOnly: true,
-                      controller: _deadlineController,
-                      decoration: const InputDecoration(
-                        labelText: 'Safe-use deadline',
-                        helperText: 'Until when is this food safe to use?',
-                        helperStyle: TextStyle(color: AppColors.secondaryText),
-                        prefixIcon: Icon(Icons.event_available_outlined),
-                        errorMaxLines: 2,
-                      ),
-                      onTap: () => _pickDateTime(
-                        initialValue: _safeDeadline,
-                        onSelected: (picked) {
-                          setState(() {
-                            _safeDeadline = picked;
-                            _deadlineController.text =
-                                DateTimeUtils.formatForDisplay(picked);
-                          });
-                        },
-                      ),
-                      validator: (value) {
-                        if (_safeDeadline == null) {
-                          return 'Safe-use deadline is required.';
-                        }
-                        if (DateTimeUtils.isPastDeadline(_safeDeadline!)) {
-                          return 'Safe-use deadline must be in the future.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 12),
+                    _SectionCard(
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            readOnly: true,
+                        AppTextField(
+                          controller: _deadlineController,
+                          label: 'Safe-use deadline',
+                          hint: 'Select date and time',
+                          prefixIcon: const Icon(
+                            Icons.event_available_outlined,
+                          ),
+                          helperText: 'Until when is this food safe to use?',
+                          readOnly: true,
+                          onTap: () => _pickDateTime(
+                            initialValue: _safeDeadline,
+                            onSelected: (picked) {
+                              setState(() {
+                                _safeDeadline = picked;
+                                _deadlineController.text =
+                                    DateTimeUtils.formatForDisplay(picked);
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (_safeDeadline == null) {
+                              return 'Safe-use deadline is required.';
+                            }
+                            if (DateTimeUtils.isPastDeadline(_safeDeadline!)) {
+                              return 'Deadline must be in the future.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        _TwoColumn(
+                          first: AppTextField(
                             controller: _pickupStartController,
-                            decoration: const InputDecoration(
-                              labelText: 'Pickup start',
-                              errorMaxLines: 2,
-                            ),
+                            label: 'Pickup start',
+                            hint: 'Select',
+                            readOnly: true,
                             onTap: () => _pickDateTime(
                               initialValue: _pickupStart,
                               onSelected: (picked) {
@@ -413,23 +447,15 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
                                 });
                               },
                             ),
-                            validator: (value) {
-                              if (_pickupStart == null) {
-                                return 'Pickup start is required.';
-                              }
-                              return null;
-                            },
+                            validator: (value) => _pickupStart == null
+                                ? 'Pickup start is required.'
+                                : null,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            readOnly: true,
+                          second: AppTextField(
                             controller: _pickupEndController,
-                            decoration: const InputDecoration(
-                              labelText: 'Pickup end',
-                              errorMaxLines: 2,
-                            ),
+                            label: 'Pickup end',
+                            hint: 'Select',
+                            readOnly: true,
                             onTap: () => _pickDateTime(
                               initialValue: _pickupEnd,
                               onSelected: (picked) {
@@ -446,11 +472,11 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
                               }
                               if (_pickupStart != null &&
                                   !_pickupEnd!.isAfter(_pickupStart!)) {
-                                return 'Pickup end must be after pickup start.';
+                                return 'End must be after start.';
                               }
                               if (_safeDeadline != null &&
                                   _pickupEnd!.isAfter(_safeDeadline!)) {
-                                return 'Pickup must end before the safe-use deadline.';
+                                return 'Pickup must end before the deadline.';
                               }
                               return null;
                             },
@@ -458,114 +484,541 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Pickup Location',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _pickupAreaController,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'General pickup area',
-                        hintText: 'e.g. G-11 Markaz',
-                        prefixIcon: Icon(Icons.location_on_outlined),
-                      ),
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Pickup area is required.'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _pickupAddressController,
-                      maxLines: 2,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Pickup address',
-                        hintText: 'Street, building, or landmark details',
-                      ),
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Pickup address is required.'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _notesController,
-                      maxLines: 3,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
-                        labelText: 'Additional notes (optional)',
-                        hintText: 'Packing, storage, or handling details',
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Brief responsibility reminder required by the project
-                    // document. FoodLink never certifies food safety.
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.lightAmber,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.warningAmber.withValues(alpha: 0.35),
+                    const SizedBox(height: 22),
+
+                    // Section 3: Pickup location
+                    _SectionHeader(number: '3', title: 'Pickup location'),
+                    const SizedBox(height: 12),
+                    _SectionCard(
+                      children: [
+                        AppTextField(
+                          controller: _pickupAreaController,
+                          label: 'General pickup area',
+                          hint: 'e.g. G-11 Markaz',
+                          prefixIcon: const Icon(Icons.location_on_outlined),
+                          textCapitalization: TextCapitalization.words,
+                          textInputAction: TextInputAction.next,
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Pickup area is required.'
+                              : null,
                         ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.health_and_safety_outlined,
-                            size: 18,
-                            color: AppColors.warningAmber,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Food safety reminder: only share food you know '
-                              'is safe to eat and provide accurate deadline '
-                              'information. FoodLink does not verify food safety.',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: AppColors.primaryText,
-                                    height: 1.4,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        AppTextField(
+                          controller: _pickupAddressController,
+                          label: 'Pickup address',
+                          hint: 'Street, building, or landmark details',
+                          textCapitalization: TextCapitalization.words,
+                          textInputAction: TextInputAction.next,
+                          maxLines: 2,
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Pickup address is required.'
+                              : null,
+                        ),
+                        const SizedBox(height: AppTheme.spaceLg),
+                        AppTextField(
+                          controller: _notesController,
+                          label: 'Additional notes (optional)',
+                          hint: 'Packing, storage, or handling details',
+                          textCapitalization: TextCapitalization.sentences,
+                          maxLines: 3,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _submit,
-                        icon: Icon(
-                          _isEditing ? Icons.save_outlined : Icons.publish,
-                        ),
-                        label: Text(
-                          _isEditing ? 'Save Changes' : 'Publish Donation',
-                        ),
-                      ),
+                    const SizedBox(height: 18),
+
+                    // Safety reminder
+                    const _SafetyReminder(),
+                    const SizedBox(height: 20),
+
+                    // Submit button (gradient)
+                    _SubmitButton(
+                      label: _isEditing ? 'Save Changes' : 'Publish Donation',
+                      icon: _isEditing ? Icons.save_outlined : Icons.publish,
+                      onTap: _submit,
                     ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: _confirmCancel,
-                        child: const Text('Cancel'),
-                      ),
-                    ),
+                    _CancelButton(onTap: _confirmCancel),
                   ],
                 ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// SECTION HEADER (with numbered green badge)
+// ============================================================
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.number,
+    required this.title,
+    this.subtitle,
+  });
+
+  final String number;
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          height: 28,
+          width: 28,
+          decoration: BoxDecoration(
+            color: _green,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _textPrimary,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: _textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================
+// SECTION CARD (kept simple, just shadows added)
+// ============================================================
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+}
+
+// ============================================================
+// DROPDOWN FIELD (consistent with AppTextField style)
+// ============================================================
+class _DropdownField extends StatelessWidget {
+  const _DropdownField({
+    required this.initialValue,
+    required this.labelText,
+    required this.items,
+    required this.validator,
+    required this.onChanged,
+    this.prefixIcon,
+  });
+
+  final String? initialValue;
+  final String labelText;
+  final List<String> items;
+  final String? Function(String?) validator;
+  final void Function(String?) onChanged;
+  final IconData? prefixIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _border, width: 1.2),
+      ),
+      child: DropdownButtonFormField<String>(
+        initialValue: initialValue,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: labelText,
+          prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+        ),
+        items: items
+            .map(
+              (option) => DropdownMenuItem(
+                value: option,
+                child: Text(option, overflow: TextOverflow.ellipsis),
+              ),
+            )
+            .toList(),
+        validator: validator,
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+// ============================================================
+// TWO-COLUMN (responsive)
+// ============================================================
+class _TwoColumn extends StatelessWidget {
+  const _TwoColumn({required this.first, required this.second});
+
+  final Widget first;
+  final Widget second;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width < AppTheme.compactPhoneMax) {
+      return Column(
+        children: [
+          first,
+          const SizedBox(height: AppTheme.spaceLg),
+          second,
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: AppTheme.spaceMd),
+        Expanded(child: second),
+      ],
+    );
+  }
+}
+
+// ============================================================
+// SAFETY REMINDER (kept similar, slight restyle)
+// ============================================================
+class _SafetyReminder extends StatelessWidget {
+  const _SafetyReminder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF4E6C7)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD58A19).withOpacity(0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.health_and_safety_outlined,
+              size: 18,
+              color: Color(0xFFD58A19),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Food safety reminder',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF594719),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Only share food you know is safe to eat and give accurate '
+                  'deadline information. FoodLink does not verify food safety.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: const Color(0xFF806E48),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// SUBMIT BUTTON (gradient green, with shadow)
+// ============================================================
+class _SubmitButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _SubmitButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: _green,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            height: 52,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: _green.withOpacity(0.35),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// CANCEL BUTTON (outline gray)
+// ============================================================
+class _CancelButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CancelButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            height: 48,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _border, width: 1.2),
+            ),
+            child: const Center(
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: _textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// CONFIRM DIALOG (cancel discard)
+// ============================================================
+class _ConfirmDialog extends StatelessWidget {
+  final String title;
+  final String body;
+  final IconData icon;
+  final Color iconColor;
+  final String confirmLabel;
+  final Color confirmColor;
+
+  const _ConfirmDialog({
+    required this.title,
+    required this.body,
+    required this.icon,
+    required this.iconColor,
+    required this.confirmLabel,
+    required this.confirmColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 56,
+              width: 56,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(icon, color: iconColor, size: 28),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
+                color: _textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              body,
+              style: TextStyle(
+                fontSize: 13,
+                color: _textPrimary.withOpacity(0.7),
+                height: 1.55,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: TextButton.styleFrom(
+                      foregroundColor: _textSecondary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: _border),
+                      ),
+                    ),
+                    child: const Text(
+                      'Keep editing',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Material(
+                    color: confirmColor,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context, true),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: confirmColor.withOpacity(0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          confirmLabel,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

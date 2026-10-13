@@ -27,13 +27,23 @@ class SummaryCard extends StatelessWidget {
         final compact = constraints.maxWidth < 120;
         return AppCard(
           margin: EdgeInsets.zero,
-          padding: EdgeInsets.all(compact ? 8 : 16),
+          padding: EdgeInsets.all(compact ? 10 : 14),
           child: compact
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(icon, color: iconColor, size: 22),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: tintColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, color: iconColor, size: 18),
+                    ),
+                    const SizedBox(height: 6),
                     Text(
                       value,
                       maxLines: 1,
@@ -44,6 +54,7 @@ class SummaryCard extends StatelessWidget {
                         color: AppColors.primaryText,
                       ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
                       label,
                       maxLines: 2,
@@ -65,15 +76,15 @@ class SummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
                             color: tintColor,
                             borderRadius: BorderRadius.circular(
                               AppTheme.compactRadius,
                             ),
                           ),
-                          child: Icon(icon, color: iconColor, size: 22),
+                          child: Icon(icon, color: iconColor, size: 20),
                         ),
                         Flexible(
                           child: Text(
@@ -82,7 +93,7 @@ class SummaryCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.end,
                             style: const TextStyle(
-                              fontSize: 26,
+                              fontSize: 24,
                               fontWeight: FontWeight.w800,
                               color: AppColors.primaryText,
                             ),
@@ -90,13 +101,16 @@ class SummaryCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Text(
                       label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.secondaryText,
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.1,
                       ),
                     ),
                   ],

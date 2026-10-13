@@ -31,6 +31,25 @@ class _MainShellScreenState extends State<MainShellScreen> {
     _selectedIndex = widget.initialIndex;
   }
 
+  Widget _navIcon({required IconData icon, required int count}) {
+    if (count <= 0) return Icon(icon);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        Positioned(
+          right: -8,
+          top: -4,
+          child: Badge(
+            label: Text('$count'),
+            backgroundColor: AppColors.errorRed,
+            textColor: AppColors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -50,45 +69,42 @@ class _MainShellScreenState extends State<MainShellScreen> {
               DonorProfileScreen(repository: widget.repository),
             ],
           ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (index) {
-              setState(() => _selectedIndex = index);
-            },
-            destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.dashboard_outlined),
-                selectedIcon: Icon(Icons.dashboard_rounded),
-                label: 'Dashboard',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.inventory_2_outlined),
-                selectedIcon: Icon(Icons.inventory_2_rounded),
-                label: 'My Donations',
-              ),
-              NavigationDestination(
-                icon: pendingCount > 0
-                    ? Badge(
-                        label: Text('$pendingCount'),
-                        backgroundColor: AppColors.warningAmber,
-                        child: const Icon(Icons.request_page_outlined),
-                      )
-                    : const Icon(Icons.request_page_outlined),
-                selectedIcon: pendingCount > 0
-                    ? Badge(
-                        label: Text('$pendingCount'),
-                        backgroundColor: AppColors.warningAmber,
-                        child: const Icon(Icons.request_page_rounded),
-                      )
-                    : const Icon(Icons.request_page_rounded),
-                label: 'Pickup Requests',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person_rounded),
-                label: 'Profile',
-              ),
-            ],
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() => _selectedIndex = index);
+              },
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.dashboard_outlined),
+                  selectedIcon: const Icon(Icons.dashboard_rounded),
+                  label: 'Dashboard',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.inventory_2_outlined),
+                  selectedIcon: Icon(Icons.inventory_2_rounded),
+                  label: 'My Donations',
+                ),
+                NavigationDestination(
+                  icon: _navIcon(
+                    icon: Icons.request_page_outlined,
+                    count: pendingCount,
+                  ),
+                  selectedIcon: _navIcon(
+                    icon: Icons.request_page_rounded,
+                    count: pendingCount,
+                  ),
+                  label: 'Pickup Requests',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.person_outline),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: 'Profile',
+                ),
+              ],
+            ),
           ),
         );
       },
