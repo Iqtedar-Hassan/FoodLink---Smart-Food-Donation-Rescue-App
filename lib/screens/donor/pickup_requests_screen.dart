@@ -7,6 +7,7 @@ import '../../data/repositories/local_donation_repository.dart';
 import '../../models/food_donation.dart';
 import '../../models/pickup_request.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/app_card.dart';
 import '../../widgets/common/status_badge.dart';
 
 class PickupRequestsScreen extends StatefulWidget {
@@ -266,14 +267,7 @@ class _RequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPending = request.status == PickupRequestStatus.pending;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

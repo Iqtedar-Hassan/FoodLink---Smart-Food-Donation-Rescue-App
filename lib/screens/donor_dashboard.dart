@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_theme.dart';
+import '../widgets/common/app_card.dart';
+
 class DonorDashboard extends StatelessWidget {
   const DonorDashboard({super.key});
 
-  static const Color green = Color(0xFF16845B);
+  static const Color green = AppColors.primaryGreen;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF8),
+      backgroundColor: AppColors.warmBackground,
       appBar: AppBar(
-        backgroundColor: green,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.warmBackground,
+        foregroundColor: AppColors.primaryText,
         title: const Text('FoodLink - Donor'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppTheme.pagePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -31,37 +35,34 @@ class DonorDashboard extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              SizedBox(
-                width: double.infinity,
-                height: 120,
-                child: Card(
-                  color: const Color(0xFFE2F4E9),
-                  child: const Padding(
-                    padding: EdgeInsets.all(18),
-                    child: Row(
-                      children: [
-                        Icon(Icons.volunteer_activism, size: 45, color: green),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Rescue Food',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: green,
-                                ),
+              const AppCard(
+                margin: EdgeInsets.zero,
+                padding: EdgeInsets.all(18),
+                child: Padding(
+                  padding: EdgeInsets.zero,
+                  child: Row(
+                    children: [
+                      Icon(Icons.volunteer_activism, size: 45, color: green),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Rescue Food',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: green,
                               ),
-                              SizedBox(height: 6),
-                              Text('Your extra food can help others.'),
-                            ],
-                          ),
+                            ),
+                            SizedBox(height: 6),
+                            Text('Your extra food can help others.'),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -130,11 +131,11 @@ class _DashboardButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 12),
+    return AppCard(
+      onTap: onTap,
+      padding: EdgeInsets.zero,
       child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
+        contentPadding: const EdgeInsets.all(AppTheme.cardPadding),
         leading: Icon(icon, color: const Color(0xFF16845B), size: 30),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Padding(
@@ -142,7 +143,6 @@ class _DashboardButton extends StatelessWidget {
           child: Text(subtitle),
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
       ),
     );
   }

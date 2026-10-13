@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/repositories/local_donation_repository.dart';
 import '../../models/food_donation.dart';
 import '../../models/pickup_request.dart';
 import '../../widgets/common/empty_state.dart';
+import '../../widgets/common/app_card.dart';
 import '../../widgets/common/status_badge.dart';
 import '../../widgets/donations/donation_card.dart';
 import '../../widgets/donations/summary_card.dart';
@@ -16,9 +18,11 @@ class DonorDashboardScreen extends StatelessWidget {
 
   String _greetingForNow() {
     final hour = DateTime.now().hour;
+
     if (hour >= 5 && hour < 12) return 'Good morning';
     if (hour >= 12 && hour < 17) return 'Good afternoon';
     if (hour >= 17 && hour < 21) return 'Good evening';
+
     return 'Good night';
   }
 
@@ -28,6 +32,7 @@ class DonorDashboardScreen extends StatelessWidget {
       listenable: repository,
       builder: (context, _) {
         final donor = repository.currentDonor;
+
         if (donor == null) {
           return const Center(child: Text('Please log in to continue.'));
         }
@@ -79,7 +84,7 @@ class DonorDashboardScreen extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     color: AppColors.lightGreen,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(AppTheme.compactRadius),
                   ),
                   child: const Icon(
                     Icons.volunteer_activism_rounded,
@@ -93,9 +98,10 @@ class DonorDashboardScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${_greetingForNow()}, ${donor.fullName.split(' ').first}!',
+                        '${_greetingForNow()}, '
+                        '${donor.fullName.split(' ').first}!',
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -121,23 +127,23 @@ class DonorDashboardScreen extends StatelessWidget {
           ),
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 8),
+                  // Donation summary cards
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      final narrow = constraints.maxWidth < 360;
-                      return GridView.count(
-                        crossAxisCount: narrow ? 1 : 2,
+                      final width = constraints.maxWidth;
+                      final narrow = width < 340;
+
+                      return GridView.extent(
+                        maxCrossAxisExtent: narrow ? width : 190,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: narrow
-                            ? (constraints.maxWidth / 116).clamp(0.4, 2.8)
-                            : 1.2,
+                        mainAxisSpacing: AppTheme.itemGap,
+                        crossAxisSpacing: AppTheme.itemGap,
+                        childAspectRatio: 1.2,
                         children: [
                           SummaryCard(
                             label: 'Total Donations',
@@ -171,58 +177,48 @@ class DonorDashboardScreen extends StatelessWidget {
                       );
                     },
                   ),
+
                   const SizedBox(height: 20),
+
+                  // Quick actions heading
                   const Text(
                     'Quick Actions',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryText,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth < 600) {
-                        final actionWidth = (constraints.maxWidth - 10) / 2;
-                        return Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            for (final action in quickActions)
-                              SizedBox(
-                                width: actionWidth,
-                                height: 104,
-                                child: action,
-                              ),
-                          ],
-                        );
-                      }
-                      return Row(
-                        children: [
-                          for (
-                            var index = 0;
-                            index < quickActions.length;
-                            index++
-                          ) ...[
-                            if (index > 0) const SizedBox(width: 10),
-                            Expanded(
-                              child: SizedBox(
-                                height: 104,
-                                child: quickActions[index],
-                              ),
-                            ),
-                          ],
-                        ],
-                      );
-                    },
+
+                  const SizedBox(height: 10),
+
+                  // Horizontally scrollable quick actions
+                  SizedBox(
+                    height: 88,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: quickActions.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        return SizedBox(width: 132, child: quickActions[index]);
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 22),
+
+                  // Recent donations heading
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Recent Donations',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                      const Expanded(
+                        child: Text(
+                          'Recent Donations',
+                          style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       TextButton(
@@ -232,6 +228,7 @@ class DonorDashboardScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+
                   if (recent.isEmpty)
                     EmptyState(
                       message: 'No donations published yet. Create your first donation.',
@@ -243,9 +240,11 @@ class DonorDashboardScreen extends StatelessWidget {
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
                       itemCount: recent.length.clamp(0, 3),
                       itemBuilder: (context, index) {
                         final donation = recent[index];
+
                         return DonationCard(
                           donation: donation,
                           onTap: () => Navigator.pushNamed(
@@ -256,15 +255,20 @@ class DonorDashboardScreen extends StatelessWidget {
                         );
                       },
                     ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 18),
+
+                  // Pending requests heading
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Pending Pickup Requests',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                      const Expanded(
+                        child: Text(
+                          'Pending Pickup Requests',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       TextButton(
@@ -274,37 +278,32 @@ class DonorDashboardScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 2),
+
+                  // Compact pending request cards
                   if (pending.isEmpty)
                     const EmptyState(
                       message: 'No pickup requests awaiting your decision.',
                     )
                   else
-                    ListView.builder(
+                    ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
                       itemCount: pending.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 7),
                       itemBuilder: (context, index) {
                         final request = pending[index];
+
                         final donation = repository.donationById(
                           request.donationId,
                         );
-                        return ListTile(
-                          tileColor: AppColors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            side: const BorderSide(color: AppColors.border),
-                          ),
-                          leading: const Icon(
-                            Icons.pending_actions_outlined,
-                            color: AppColors.warningAmber,
-                          ),
-                          title: Text(request.ngoName),
-                          subtitle: Text(
-                            donation != null
-                                ? '${donation.foodName} • ${request.requestedQuantity} ${request.requestedUnit}'
-                                : 'Donation',
-                          ),
-                          trailing: StatusBadge(status: request.status.label),
+
+                        return _PendingRequestCard(
+                          request: request,
+                          foodName: donation?.foodName ?? 'Donation',
                         );
                       },
                     ),
@@ -318,6 +317,7 @@ class DonorDashboardScreen extends StatelessWidget {
   }
 }
 
+// Quick action card
 class _QuickActionCard extends StatelessWidget {
   const _QuickActionCard({
     required this.icon,
@@ -335,42 +335,99 @@ class _QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+    return AppCard(
+      onTap: onTap,
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Badge(
+            isLabelVisible: badgeCount > 0,
+            label: Text('$badgeCount'),
+            backgroundColor: AppColors.errorRed,
+            alignment: AlignmentDirectional.topEnd,
+            child: Icon(icon, color: color, size: 25),
           ),
-          child: Column(
-            children: [
-              Badge(
-                isLabelVisible: badgeCount > 0,
-                label: Text('$badgeCount'),
-                backgroundColor: AppColors.errorRed,
-                alignment: AlignmentDirectional.topEnd,
-                child: Icon(icon, color: color, size: 26),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryText,
+          const SizedBox(height: 7),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Compact pending pickup request card
+class _PendingRequestCard extends StatelessWidget {
+  const _PendingRequestCard({required this.request, required this.foodName});
+
+  final PickupRequest request;
+  final String foodName;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.lightAmber,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.pending_actions_outlined,
+              color: AppColors.warningAmber,
+              size: 19,
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  request.ngoName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryText,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 3),
+                Text(
+                  '$foodName • ${request.requestedQuantity} '
+                  '${request.requestedUnit}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    height: 1.2,
+                    color: AppColors.secondaryText,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: 6),
+          StatusBadge(status: request.status.label),
+        ],
       ),
     );
   }

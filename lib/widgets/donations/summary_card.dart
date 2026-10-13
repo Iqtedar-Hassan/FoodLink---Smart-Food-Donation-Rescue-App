@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../common/app_card.dart';
 
 class SummaryCard extends StatelessWidget {
   const SummaryCard({
@@ -23,20 +25,9 @@ class SummaryCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 120;
-        return Container(
+        return AppCard(
+          margin: EdgeInsets.zero,
           padding: EdgeInsets.all(compact ? 8 : 16),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryGreen.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
           child: compact
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +69,9 @@ class SummaryCard extends StatelessWidget {
                           height: 44,
                           decoration: BoxDecoration(
                             color: tintColor,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.compactRadius,
+                            ),
                           ),
                           child: Icon(icon, color: iconColor, size: 22),
                         ),

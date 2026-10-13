@@ -4,6 +4,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../data/repositories/local_donation_repository.dart';
+import '../../widgets/common/app_card.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key, required this.repository});
@@ -111,23 +112,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       minHeight: constraints.maxHeight,
                     ),
                     child: Center(
-                      child: Container(
-                        width: double.infinity,
+                      child: AppCard(
+                        margin: EdgeInsets.zero,
                         padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(28),
-                          border: Border.all(color: AppColors.border),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryGreen.withValues(
-                                alpha: 0.06,
-                              ),
-                              blurRadius: 16,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
                         child: Form(
                           key: _formKey,
                           child: Column(

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 import '../../data/repositories/local_donation_repository.dart';
+import '../../widgets/common/app_card.dart';
 
 class DonorProfileScreen extends StatefulWidget {
   const DonorProfileScreen({super.key, required this.repository});
@@ -218,111 +220,131 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
         return Scaffold(
           appBar: AppBar(title: const Text('Profile')),
           body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppColors.lightGreen,
-                    child: Text(
-                      donor.fullName.isNotEmpty
-                          ? donor.fullName.substring(0, 1).toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        color: AppColors.primaryGreen,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    donor.fullName,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightGreen,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Text(
-                      '${donor.donorType} Donor',
-                      style: const TextStyle(
-                        color: AppColors.darkGreen,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppTheme.pagePadding),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _SummaryTile(
-                          label: 'Total',
-                          value: '${widget.repository.totalDonations}',
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.lightGreen,
+                        child: Text(
+                          donor.fullName.isNotEmpty
+                              ? donor.fullName.substring(0, 1).toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            fontSize: 32,
+                            color: AppColors.primaryGreen,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _SummaryTile(
-                          label: 'Available',
-                          value: '${widget.repository.availableDonations}',
+                      const SizedBox(height: 14),
+                      Text(
+                        donor.fullName,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.lightGreen,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Text(
+                          '${donor.donorType} Donor',
+                          style: const TextStyle(
+                            color: AppColors.darkGreen,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _SummaryTile(
-                          label: 'Completed',
-                          value: '${widget.repository.completedDonations}',
+                      const SizedBox(height: 20),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final width = constraints.maxWidth < 360
+                              ? (constraints.maxWidth - 10) / 2
+                              : (constraints.maxWidth - 20) / 3;
+                          return Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              SizedBox(
+                                width: width,
+                                child: _SummaryTile(
+                                  label: 'Total',
+                                  value: '${widget.repository.totalDonations}',
+                                ),
+                              ),
+                              SizedBox(
+                                width: width,
+                                child: _SummaryTile(
+                                  label: 'Available',
+                                  value:
+                                      '${widget.repository.availableDonations}',
+                                ),
+                              ),
+                              SizedBox(
+                                width: width,
+                                child: _SummaryTile(
+                                  label: 'Completed',
+                                  value:
+                                      '${widget.repository.completedDonations}',
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      _ProfileField(label: 'Email', value: donor.email),
+                      _ProfileField(label: 'Phone', value: donor.phone),
+                      _ProfileField(
+                        label: 'Donor type',
+                        value: donor.donorType,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _editProfile,
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Edit Profile'),
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _logout,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.errorRed,
+                            side: const BorderSide(color: AppColors.errorRed),
+                          ),
+                          icon: const Icon(Icons.logout, size: 18),
+                          label: const Text('Logout'),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        AppConstants.demoDataNote,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.secondaryText),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  _ProfileField(label: 'Email', value: donor.email),
-                  _ProfileField(label: 'Phone', value: donor.phone),
-                  _ProfileField(label: 'Donor type', value: donor.donorType),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _editProfile,
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      label: const Text('Edit Profile'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: _logout,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.errorRed,
-                        side: const BorderSide(color: AppColors.errorRed),
-                      ),
-                      icon: const Icon(Icons.logout, size: 18),
-                      label: const Text('Logout'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    AppConstants.demoDataNote,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: AppColors.secondaryText),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -340,13 +362,9 @@ class _SummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
+    return AppCard(
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
       child: Column(
         children: [
           Text(
@@ -380,15 +398,7 @@ class _ProfileField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

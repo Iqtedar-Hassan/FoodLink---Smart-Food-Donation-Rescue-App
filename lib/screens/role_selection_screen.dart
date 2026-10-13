@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_theme.dart';
 import '../data/repositories/local_donation_repository.dart';
 import '../screens/auth/login_screen.dart';
+import '../widgets/common/app_card.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key, required this.repository});
 
   final FoodLinkRepository repository;
 
-  static const Color primaryGreen = Color(0xFF16845B);
-  static const Color darkGreen = Color(0xFF105C40);
+  static const Color primaryGreen = AppColors.primaryGreen;
+  static const Color darkGreen = AppColors.darkGreen;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF8),
+      backgroundColor: AppColors.warmBackground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7FAF8),
+        backgroundColor: AppColors.warmBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: darkGreen),
@@ -33,7 +36,7 @@ class RoleSelectionScreen extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppTheme.pagePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -42,8 +45,8 @@ class RoleSelectionScreen extends StatelessWidget {
                     height: 100,
                     width: 100,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE1F3E9),
-                      borderRadius: BorderRadius.circular(28),
+                      color: AppColors.lightGreen,
+                      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                     ),
                     child: const Icon(
                       Icons.volunteer_activism,
@@ -149,31 +152,22 @@ class _RoleCard extends StatelessWidget {
     required this.onTap,
   });
 
-  static const Color primaryGreen = Color(0xFF16845B);
-  static const Color darkGreen = Color(0xFF105C40);
+  static const Color primaryGreen = AppColors.primaryGreen;
+  static const Color darkGreen = AppColors.darkGreen;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFDCEBE1)),
-          ),
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(18),
           child: Row(
             children: [
               Container(
                 height: 58,
                 width: 58,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5F5EC),
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppColors.lightGreen,
+                  borderRadius: BorderRadius.circular(AppTheme.compactRadius),
                 ),
                 child: Icon(icon, size: 30, color: primaryGreen),
               ),
@@ -211,7 +205,6 @@ class _RoleCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

@@ -34,6 +34,43 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('donor quick actions do not create negative widths', (
+    tester,
+  ) async {
+    final repository = FoodLinkRepository()
+      ..login('donor@foodlink.demo', 'Pass1234');
+
+    await tester.pumpWidget(
+      MaterialApp(home: DonorDashboardScreen(repository: repository)),
+    );
+
+    final actionBuilder = tester
+        .widget<LayoutBuilder>(
+          find
+              .ancestor(
+                of: find.text('Create Donation'),
+                matching: find.byType(LayoutBuilder),
+              )
+              .first,
+        )
+        .builder;
+    final dashboardContext = tester.element(find.byType(DonorDashboardScreen));
+    final actionLayout = actionBuilder(
+      dashboardContext,
+      const BoxConstraints(maxWidth: 5, maxHeight: 104),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(child: SizedBox(width: 5, child: actionLayout)),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('donor quick actions adapt across screen widths', (tester) async {
     tester.view.physicalSize = const Size(1200, 1200);
     tester.view.devicePixelRatio = 1;

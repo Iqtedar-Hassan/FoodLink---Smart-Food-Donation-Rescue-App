@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge({super.key, required this.status});
@@ -11,19 +12,24 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color;
     switch (status) {
-      case 'Available':
-        color = AppColors.primaryGreen;
-        break;
+      case 'Pending':
       case 'Reserved':
         color = AppColors.warningAmber;
+        break;
+      case 'Approved':
+      case 'Available':
+      case 'Completed':
+        color = AppColors.primaryGreen;
         break;
       case 'Collected':
       case 'Delivered':
         color = AppColors.darkGreen;
         break;
-      case 'Cancelled':
       case 'Rejected':
         color = AppColors.errorRed;
+        break;
+      case 'Cancelled':
+        color = AppColors.secondaryText;
         break;
       default:
         color = AppColors.primaryGreen;
@@ -32,13 +38,14 @@ class StatusBadge extends StatelessWidget {
     // AnimatedContainer smoothly transitions the color when a status changes.
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppTheme.compactRadius),
       ),
       child: Text(
         status,
+        maxLines: 1,
         style: TextStyle(
           color: color,
           fontSize: 12,

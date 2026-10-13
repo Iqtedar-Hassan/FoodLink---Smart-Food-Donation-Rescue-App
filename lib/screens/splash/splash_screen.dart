@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/repositories/local_donation_repository.dart';
+import '../../widgets/common/app_card.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, required this.repository});
@@ -117,14 +118,9 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ),
                         const SizedBox(height: 28),
-                        Container(
-                          width: double.infinity,
+                        AppCard(
+                          margin: EdgeInsets.zero,
                           padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: AppColors.border),
-                          ),
                           child: Row(
                             children: [
                               Container(
