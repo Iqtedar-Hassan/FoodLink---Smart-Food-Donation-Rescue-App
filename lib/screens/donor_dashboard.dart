@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
-import '../core/theme/app_theme.dart';
-import '../widgets/common/app_card.dart';
 
 class DonorDashboard extends StatefulWidget {
   const DonorDashboard({super.key});
@@ -526,7 +524,7 @@ class _DonorDashboardState extends State<DonorDashboard> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 2),
             itemCount: actions.length,
-            separatorBuilder: (_, __) =>
+            separatorBuilder: (_, _) =>
                 const SizedBox(width: _actionCardSpacing),
             itemBuilder: (context, index) {
               return SizedBox(
@@ -565,13 +563,13 @@ class _DonorDashboardState extends State<DonorDashboard> {
               Icon(
                 Icons.swipe_rounded,
                 size: 14,
-                color: textSecondary.withOpacity(0.6),
+                color: textSecondary.withValues(alpha: 0.6),
               ),
               const SizedBox(width: 6),
               Text(
                 'Swipe to see more',
                 style: TextStyle(
-                  color: textSecondary.withOpacity(0.7),
+                  color: textSecondary.withValues(alpha: 0.7),
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),

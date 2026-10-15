@@ -56,3 +56,18 @@ FoodLink aims to create a practical connection between surplus food and people w
 
 **Project Status:** Currently under development as part of a Mobile Application Development academic project.
 
+## Current Demo Scope
+
+The implemented donor workflow uses a local in-memory repository for sign-in,
+profiles, donations, and pickup requests. New accounts and changes are lost
+when the app process restarts. The demo account is `donor@foodlink.demo` with
+password `Pass1234`.
+
+The application has no Firebase initialization or Firebase dependencies. Its
+authentication and data operations use local mock accounts and in-memory
+repositories; data is not persistent or production-secure.
+
+The shared role model supports Donor, NGO, and Admin accounts. This checkout
+implements the Donor workspace; NGO and Admin workspaces must be supplied by
+their respective implementations before those roles can use dashboard features.
+

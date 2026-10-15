@@ -22,6 +22,32 @@ class Validators {
     return null;
   }
 
+  static String? validatePhoneNumber(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required.';
+    }
+
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 10 || digits.length > 15) {
+      return 'Enter a valid phone number.';
+    }
+
+    return null;
+  }
+
+  static String? validatePositiveFiniteNumber(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Quantity is required.';
+    }
+
+    final parsed = num.tryParse(value.trim());
+    if (parsed == null || !parsed.isFinite || parsed <= 0) {
+      return 'Must be greater than zero.';
+    }
+
+    return null;
+  }
+
   static String? validateRequired(String? value, String label) {
     if (value == null || value.trim().isEmpty) {
       return '$label is required.';

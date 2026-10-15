@@ -4,13 +4,15 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../data/repositories/local_donation_repository.dart';
+import '../../models/user_role.dart';
 import '../../widgets/common/app_text_field.dart';
 import '../../widgets/common/button_loading.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key, required this.repository});
+  const SignUpScreen({super.key, required this.repository, required this.role});
 
   final FoodLinkRepository repository;
+  final UserRole role;
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -78,6 +80,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     // Simulated processing delay so the loading state is visible in the demo.
     await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
 
     try {
       widget.repository.signup(
@@ -85,14 +88,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
         email: _emailController.text,
         phone: _phoneController.text,
         password: _passwordController.text,
-        donorType: _donorType,
+        role: widget.role,
+        donorType: widget.role == UserRole.donor ? _donorType : null,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Account created successfully.'),
+          content: Text(
+            widget.role == UserRole.donor ? 'Account created successfully.' : 'NGO account registered. The NGO dashboard is not available in this build.',
+          ),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -102,7 +108,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       Navigator.pushNamedAndRemoveUntil(
         context,
-        '/dashboard',
+        widget.role == UserRole.donor ? '/dashboard' : '/login',
         (route) => false,
       );
     } catch (error) {
@@ -136,12 +142,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final height = constraints.maxHeight;
-          final isLandscape = width > height;
-          final isTablet = width >= 600;
-          final useSplitLayout = isTablet || (isLandscape && width >= 700);
+          final useSplitLayout = width >= 900;
 
           final formContent = _FormContent(
             formKey: _formKey,
+            role: widget.role,
             fullNameController: _fullNameController,
             emailController: _emailController,
             phoneController: _phoneController,
@@ -285,7 +290,7 @@ class _BrandingPanel extends StatelessWidget {
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -297,7 +302,7 @@ class _BrandingPanel extends StatelessWidget {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -311,7 +316,7 @@ class _BrandingPanel extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
+                        color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
@@ -346,7 +351,7 @@ class _BrandingPanel extends StatelessWidget {
                 Text(
                   'Join thousands of donors and NGOs making food rescue simple, fast, and impactful.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 15,
                     height: 1.5,
                   ),
@@ -373,9 +378,11 @@ class _BrandingPanel extends StatelessWidget {
                     vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.12),
+                    color: Colors.white.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.18)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
                   ),
                   child: Row(
                     children: const [
@@ -409,7 +416,7 @@ class _FeatureBullet extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.18),
+            color: Colors.white.withValues(alpha: 0.18),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: Colors.white, size: 14),
@@ -452,7 +459,7 @@ class _BrandStat extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 12,
             ),
           ),
@@ -470,7 +477,7 @@ class _VerticalDivider extends StatelessWidget {
     return Container(
       width: 1,
       height: 28,
-      color: Colors.white.withOpacity(0.25),
+      color: Colors.white.withValues(alpha: 0.25),
       margin: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
@@ -502,7 +509,7 @@ class _MobileHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: _SignUpScreenState._primaryGreen.withOpacity(0.35),
+                color: _SignUpScreenState._primaryGreen.withValues(alpha: 0.35),
                 blurRadius: 22,
                 offset: const Offset(0, 10),
               ),
@@ -517,10 +524,10 @@ class _MobileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Join FoodLink as a donor to share surplus food with your community.',
+          'Join FoodLink to share and rescue food in your community.',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             fontSize: 14,
             height: 1.4,
           ),
@@ -537,6 +544,7 @@ class _MobileHeader extends StatelessWidget {
 
 class _FormContent extends StatelessWidget {
   final GlobalKey<FormState> formKey;
+  final UserRole role;
   final TextEditingController fullNameController;
   final TextEditingController emailController;
   final TextEditingController phoneController;
@@ -558,6 +566,7 @@ class _FormContent extends StatelessWidget {
 
   const _FormContent({
     required this.formKey,
+    required this.role,
     required this.fullNameController,
     required this.emailController,
     required this.phoneController,
@@ -586,6 +595,39 @@ class _FormContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: _SignUpScreenState._greenSoft,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _SignUpScreenState._primaryGreen.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  role == UserRole.donor
+                      ? Icons.storefront_outlined
+                      : Icons.volunteer_activism_outlined,
+                  color: _SignUpScreenState._primaryGreen,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Registering as ${role.label}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryText,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           if (isCompact) ...[
             Text(
               'Sign up',
@@ -597,10 +639,10 @@ class _FormContent extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Fill in your details to create your donor account.',
+              'Fill in your details to create your ${role.label} account.',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.primaryText.withOpacity(0.65),
+                color: AppColors.primaryText.withValues(alpha: 0.65),
               ),
             ),
             const SizedBox(height: 22),
@@ -639,16 +681,7 @@ class _FormContent extends StatelessWidget {
             keyboardType: TextInputType.phone,
             textInputAction: TextInputAction.next,
             autofillHints: const [AutofillHints.telephoneNumber],
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Phone number is required.';
-              }
-              final digits = value.replaceAll(RegExp(r'[^0-9+]'), '');
-              if (digits.length < 10 || digits.length > 15) {
-                return 'Enter a valid phone number.';
-              }
-              return null;
-            },
+            validator: Validators.validatePhoneNumber,
           ),
           const SizedBox(height: 14),
           // Password
@@ -693,9 +726,10 @@ class _FormContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          // Donor type
-          _DonorTypeSelector(value: donorType, onChanged: onDonorTypeChanged),
-          const SizedBox(height: 12),
+          if (role == UserRole.donor) ...[
+            _DonorTypeSelector(value: donorType, onChanged: onDonorTypeChanged),
+            const SizedBox(height: 12),
+          ],
           // Agreement
           _AgreementCheckbox(value: agreed, onChanged: onAgreementChanged),
           const SizedBox(height: 20),
@@ -716,7 +750,7 @@ class _FormContent extends StatelessWidget {
                 'Already have an account?',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.primaryText.withOpacity(0.7),
+                  color: AppColors.primaryText.withValues(alpha: 0.7),
                 ),
               ),
               TextButton(
@@ -753,7 +787,7 @@ class _DonorTypeSelector extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.black.withOpacity(0.1)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: value,
@@ -792,7 +826,7 @@ class _AgreementCheckbox extends StatelessWidget {
         color: _SignUpScreenState._greenSoft,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _SignUpScreenState._primaryGreen.withOpacity(0.2),
+          color: _SignUpScreenState._primaryGreen.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -821,7 +855,7 @@ class _AgreementCheckbox extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.5,
-                  color: AppColors.primaryText.withOpacity(0.8),
+                  color: AppColors.primaryText.withValues(alpha: 0.8),
                 ),
               ),
             ),
@@ -858,8 +892,8 @@ class _PrimaryButton extends StatelessWidget {
         gradient: LinearGradient(
           colors: isSubmitting
               ? [
-                  _SignUpScreenState._primaryGreen.withOpacity(0.6),
-                  _SignUpScreenState._greenDeep.withOpacity(0.6),
+                  _SignUpScreenState._primaryGreen.withValues(alpha: 0.6),
+                  _SignUpScreenState._greenDeep.withValues(alpha: 0.6),
                 ]
               : [
                   _SignUpScreenState._primaryGreen,
@@ -872,7 +906,9 @@ class _PrimaryButton extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: _SignUpScreenState._primaryGreen.withOpacity(0.35),
+                  color: _SignUpScreenState._primaryGreen.withValues(
+                    alpha: 0.35,
+                  ),
                   blurRadius: 18,
                   offset: const Offset(0, 10),
                 ),

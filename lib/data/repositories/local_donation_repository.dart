@@ -5,6 +5,7 @@ import '../../core/utils/date_time_utils.dart';
 import '../../models/donor.dart';
 import '../../models/food_donation.dart';
 import '../../models/pickup_request.dart';
+import '../../models/user_role.dart';
 
 class FoodLinkRepository extends ChangeNotifier {
   FoodLinkRepository() {
@@ -190,6 +191,7 @@ class FoodLinkRepository extends ChangeNotifier {
   late List<FoodDonation> _donations;
   late List<PickupRequest> _pickupRequests;
   Donor? _currentDonor;
+  int _lastGeneratedDonationId = 0;
 
   Donor? get currentDonor => _currentDonor;
   List<Donor> get donors => List.unmodifiable(_donors);
@@ -197,7 +199,7 @@ class FoodLinkRepository extends ChangeNotifier {
   List<PickupRequest> get pickupRequests => List.unmodifiable(_pickupRequests);
   bool get isAuthenticated => _currentDonor != null;
 
-  void login(String email, String password) {
+  UserRole login(String email, String password) {
     final normalizedEmail = email.trim();
     final donor = _donors.firstWhere(
       (item) => item.email.toLowerCase() == normalizedEmail.toLowerCase(),
@@ -206,13 +208,12 @@ class FoodLinkRepository extends ChangeNotifier {
     );
 
     if (donor.id.isEmpty || donor.password != password) {
-      throw StateError(
-        'Invalid demo credentials. Try donor@foodlink.demo / Pass1234.',
-      );
+      throw StateError('Invalid email or password.');
     }
 
     _currentDonor = donor;
     notifyListeners();
+    return donor.role;
   }
 
   void signup({
@@ -220,8 +221,15 @@ class FoodLinkRepository extends ChangeNotifier {
     required String email,
     required String phone,
     required String password,
+    UserRole role = UserRole.donor,
     String? donorType,
   }) {
+    if (role == UserRole.admin) {
+      throw StateError(
+        'Admin accounts cannot be created through registration.',
+      );
+    }
+
     final normalizedEmail = email.trim().toLowerCase();
     final existing = _donors.any(
       (donor) => donor.email.toLowerCase() == normalizedEmail,
@@ -232,17 +240,17 @@ class FoodLinkRepository extends ChangeNotifier {
       );
     }
 
-    _donors.add(
-      Donor(
-        id: 'donor_${DateTime.now().millisecondsSinceEpoch}',
-        fullName: fullName.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        password: password,
-        donorType: donorType ?? 'Household',
-      ),
+    final account = Donor(
+      id: 'donor_${DateTime.now().millisecondsSinceEpoch}',
+      fullName: fullName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      password: password,
+      donorType: donorType ?? 'Household',
+      role: role,
     );
-    _currentDonor = _donors.last;
+    _donors.add(account);
+    _currentDonor = role == UserRole.donor ? account : null;
     notifyListeners();
   }
 
@@ -334,13 +342,28 @@ class FoodLinkRepository extends ChangeNotifier {
 
   List<FoodDonation> get recentDonations =>
       donorDonations
-          .where((donation) => donation.status != DonationStatus.cancelled)
+          .where(
+            (donation) =>
+                (donation.status == DonationStatus.available ||
+                    donation.status == DonationStatus.reserved) &&
+                !DateTimeUtils.isPastDeadline(donation.safeUseDeadline),
+          )
           .toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-  String generateDonationId() => 'don_${DateTime.now().millisecondsSinceEpoch}';
+  String generateDonationId() {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final nextId = timestamp > _lastGeneratedDonationId
+        ? timestamp
+        : _lastGeneratedDonationId + 1;
+    _lastGeneratedDonationId = nextId;
+    return 'don_$nextId';
+  }
 
   void createDonation(FoodDonation donation) {
+    if (_donations.any((existing) => existing.id == donation.id)) {
+      throw StateError('A donation with this id already exists.');
+    }
     _donations.add(donation);
     notifyListeners();
   }
@@ -404,6 +427,11 @@ class FoodLinkRepository extends ChangeNotifier {
     final donation = donationById(request.donationId);
     if (donation == null) {
       throw StateError('The related donation is unavailable.');
+    }
+    if (DateTimeUtils.isPastDeadline(donation.safeUseDeadline)) {
+      throw StateError(
+        'This donation has passed its safe-use deadline and cannot be approved.',
+      );
     }
     if (donation.status == DonationStatus.cancelled) {
       throw StateError(

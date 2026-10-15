@@ -4,6 +4,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/date_time_utils.dart';
+import '../../core/utils/validators.dart';
 import '../../data/repositories/local_donation_repository.dart';
 import '../../models/food_donation.dart';
 import '../../widgets/common/app_text_field.dart';
@@ -276,13 +277,17 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              _isEditing ? 'Edit Donation' : 'Add Food Donation',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-                color: _textPrimary,
+            Flexible(
+              child: Text(
+                _isEditing ? 'Edit Donation' : 'Add Food Donation',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                  color: _textPrimary,
+                ),
               ),
             ),
           ],
@@ -366,16 +371,7 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
                               decimal: true,
                             ),
                             textInputAction: TextInputAction.next,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Quantity is required.';
-                              }
-                              final parsed = num.tryParse(value.trim());
-                              if (parsed == null || parsed <= 0) {
-                                return 'Must be greater than zero.';
-                              }
-                              return null;
-                            },
+                            validator: Validators.validatePositiveFiniteNumber,
                           ),
                           second: _DropdownField(
                             initialValue: _selectedUnit,
@@ -449,6 +445,8 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
                             ),
                             validator: (value) => _pickupStart == null
                                 ? 'Pickup start is required.'
+                                : !_pickupStart!.isAfter(DateTime.now())
+                                ? 'Pickup start must be in the future.'
                                 : null,
                           ),
                           second: AppTextField(
@@ -639,7 +637,7 @@ class _SectionCard extends StatelessWidget {
         border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -761,7 +759,7 @@ class _SafetyReminder extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: const Color(0xFFD58A19).withOpacity(0.14),
+              color: const Color(0xFFD58A19).withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -832,7 +830,7 @@ class _SubmitButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: _green.withOpacity(0.35),
+                  color: _green.withValues(alpha: 0.35),
                   blurRadius: 18,
                   offset: const Offset(0, 10),
                 ),
@@ -936,7 +934,7 @@ class _ConfirmDialog extends StatelessWidget {
               height: 56,
               width: 56,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.14),
+                color: iconColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(icon, color: iconColor, size: 28),
@@ -956,7 +954,7 @@ class _ConfirmDialog extends StatelessWidget {
               body,
               style: TextStyle(
                 fontSize: 13,
-                color: _textPrimary.withOpacity(0.7),
+                color: _textPrimary.withValues(alpha: 0.7),
                 height: 1.55,
               ),
             ),
@@ -997,7 +995,7 @@ class _ConfirmDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: confirmColor.withOpacity(0.35),
+                              color: confirmColor.withValues(alpha: 0.35),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),

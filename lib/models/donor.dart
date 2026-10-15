@@ -1,3 +1,5 @@
+import 'user_role.dart';
+
 class Donor {
   Donor({
     required this.id,
@@ -6,6 +8,7 @@ class Donor {
     required this.phone,
     required this.password,
     this.donorType = 'Household',
+    this.role = UserRole.donor,
   });
 
   final String id;
@@ -14,12 +17,14 @@ class Donor {
   final String phone;
   final String password;
   final String donorType;
+  final UserRole role;
 
   Donor copyWith({
     String? fullName,
     String? email,
     String? phone,
     String? donorType,
+    UserRole? role,
   }) {
     return Donor(
       id: id,
@@ -28,6 +33,7 @@ class Donor {
       phone: phone ?? this.phone,
       password: password,
       donorType: donorType ?? this.donorType,
+      role: role ?? this.role,
     );
   }
 }

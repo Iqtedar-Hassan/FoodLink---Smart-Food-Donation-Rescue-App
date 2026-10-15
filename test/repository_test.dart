@@ -3,13 +3,17 @@ import 'package:foodlink/core/constants/app_constants.dart';
 import 'package:foodlink/data/repositories/local_donation_repository.dart';
 import 'package:foodlink/models/food_donation.dart';
 import 'package:foodlink/models/pickup_request.dart';
+import 'package:foodlink/models/user_role.dart';
 
 void main() {
   group('FoodLinkRepository (local demo data)', () {
     test('login succeeds with demo credentials and fails otherwise', () {
       final repository = FoodLinkRepository();
 
-      repository.login(AppConstants.demoEmail, AppConstants.demoPassword);
+      expect(
+        repository.login(AppConstants.demoEmail, AppConstants.demoPassword),
+        UserRole.donor,
+      );
       expect(repository.isAuthenticated, isTrue);
       expect(repository.currentDonor?.email, AppConstants.demoEmail);
 
@@ -20,6 +24,40 @@ void main() {
         () => repository.login(AppConstants.demoEmail, 'wrong-password'),
         throwsStateError,
       );
+    });
+
+    test('NGO role is stored and returned by shared login', () {
+      final repository = FoodLinkRepository();
+
+      repository.signup(
+        fullName: 'Community NGO',
+        email: 'ngo@foodlink.demo',
+        phone: '+923001112223',
+        password: 'Pass1234',
+        role: UserRole.ngo,
+      );
+
+      expect(repository.currentDonor, isNull);
+      expect(repository.donors.last.role, UserRole.ngo);
+      expect(repository.login('ngo@foodlink.demo', 'Pass1234'), UserRole.ngo);
+      expect(repository.currentDonor?.role, UserRole.ngo);
+    });
+
+    test('Admin accounts cannot be created through public registration', () {
+      final repository = FoodLinkRepository();
+      final donorCount = repository.donors.length;
+
+      expect(
+        () => repository.signup(
+          fullName: 'Public Admin',
+          email: 'admin@foodlink.demo',
+          phone: '+923001112223',
+          password: 'Pass1234',
+          role: UserRole.admin,
+        ),
+        throwsStateError,
+      );
+      expect(repository.donors, hasLength(donorCount));
     });
 
     test('signup stores donor type and blocks duplicate emails', () {
@@ -53,25 +91,24 @@ void main() {
 
       final before = repository.totalDonations;
       final now = DateTime.now();
-
-      repository.createDonation(
-        FoodDonation(
-          id: 'don_test_1',
-          donorId: repository.currentDonor!.id,
-          foodName: 'Test Rice',
-          category: 'Cooked Meals',
-          quantity: 3,
-          quantityUnit: 'Portions',
-          safeUseDeadline: now.add(const Duration(hours: 10)),
-          pickupStart: now.add(const Duration(hours: 1)),
-          pickupEnd: now.add(const Duration(hours: 2)),
-          pickupArea: 'H-9',
-          pickupAddress: 'Test address',
-          notes: '',
-          createdAt: now,
-          status: DonationStatus.available,
-        ),
+      final donation = FoodDonation(
+        id: 'don_test_1',
+        donorId: repository.currentDonor!.id,
+        foodName: 'Test Rice',
+        category: 'Cooked Meals',
+        quantity: 3,
+        quantityUnit: 'Portions',
+        safeUseDeadline: now.add(const Duration(hours: 10)),
+        pickupStart: now.add(const Duration(hours: 1)),
+        pickupEnd: now.add(const Duration(hours: 2)),
+        pickupArea: 'H-9',
+        pickupAddress: 'Test address',
+        notes: '',
+        createdAt: now,
+        status: DonationStatus.available,
       );
+
+      repository.createDonation(donation);
 
       expect(repository.totalDonations, before + 1);
       expect(
@@ -80,6 +117,28 @@ void main() {
         ),
         isTrue,
       );
+      expect(() => repository.createDonation(donation), throwsStateError);
+      expect(repository.totalDonations, before + 1);
+    });
+
+    test('recent donations are active, unexpired, and newest first', () {
+      final repository = FoodLinkRepository();
+      repository.login(AppConstants.demoEmail, AppConstants.demoPassword);
+
+      expect(repository.recentDonations.map((donation) => donation.id), [
+        'don_102',
+        'don_101',
+        'don_103',
+      ]);
+    });
+
+    test('generated donation IDs remain unique within one millisecond', () {
+      final repository = FoodLinkRepository();
+
+      final firstId = repository.generateDonationId();
+      final secondId = repository.generateDonationId();
+
+      expect(secondId, isNot(firstId));
     });
 
     test('availableDonations excludes past-deadline donations', () {
@@ -112,6 +171,24 @@ void main() {
       // Total grows, but the expired donation is not counted as available.
       expect(repository.totalDonations, totalBefore + 1);
       expect(repository.availableDonations, availableBefore);
+    });
+
+    test('expired donations cannot be approved for pickup', () {
+      final repository = FoodLinkRepository();
+      repository.login(AppConstants.demoEmail, AppConstants.demoPassword);
+      final donation = repository.donationById('don_101')!;
+      repository.updateDonation(
+        donation.copyWith(
+          safeUseDeadline: DateTime.now().subtract(const Duration(minutes: 1)),
+        ),
+      );
+
+      expect(() => repository.approvePickupRequest('req_1'), throwsStateError);
+      expect(
+        repository.donationById('don_101')?.status,
+        DonationStatus.available,
+      );
+      expect(repository.availableDonations, 1);
     });
 
     test(

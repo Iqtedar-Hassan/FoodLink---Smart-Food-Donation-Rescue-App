@@ -147,10 +147,13 @@ class DonationDetailsScreen extends StatelessWidget {
         }
 
         final relatedRequests = repository.requestsForDonation(donation.id);
-        final canEdit =
+        final requestPreview = relatedRequests.take(3).toList();
+        final canCancel =
             donation.status == DonationStatus.available ||
             donation.status == DonationStatus.reserved;
-        final canCancel = canEdit;
+        final canEdit =
+            canCancel &&
+            !DateTimeUtils.isPastDeadline(donation.safeUseDeadline);
 
         return Scaffold(
           backgroundColor: _background,
@@ -179,13 +182,17 @@ class DonationDetailsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'Donation Details',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                    color: _textPrimary,
+                const Flexible(
+                  child: Text(
+                    'Donation Details',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      color: _textPrimary,
+                    ),
                   ),
                 ),
               ],
@@ -293,7 +300,9 @@ class DonationDetailsScreen extends StatelessWidget {
                                   '${relatedRequests.length == 1 ? 'request' : 'requests'} '
                                   'for this donation',
                         actionLabel: relatedRequests.isNotEmpty
-                            ? 'Manage'
+                            ? relatedRequests.length > requestPreview.length
+                                  ? 'View all'
+                                  : 'Manage'
                             : null,
                         onAction: relatedRequests.isNotEmpty
                             ? () => Navigator.pushNamed(
@@ -309,7 +318,7 @@ class DonationDetailsScreen extends StatelessWidget {
                               donation.status == DonationStatus.cancelled,
                         )
                       else
-                        ...relatedRequests.map(
+                        ...requestPreview.map(
                           (request) => _RequestSummaryTile(
                             request: request,
                             onTap: () => Navigator.pushNamed(
@@ -386,7 +395,7 @@ class _HeroHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: _darkGreen.withOpacity(0.18),
+            color: _darkGreen.withValues(alpha: 0.18),
             blurRadius: 18,
             offset: const Offset(0, 10),
           ),
@@ -420,7 +429,7 @@ class _HeroHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -551,11 +560,13 @@ class _InfoCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: highlight ? const Color(0xFFD58A19).withOpacity(0.4) : _border,
+          color: highlight
+              ? const Color(0xFFD58A19).withValues(alpha: 0.4)
+              : _border,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -653,7 +664,7 @@ class _EmptyRequestsCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _textSecondary.withOpacity(0.1),
+              color: _textSecondary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -715,7 +726,7 @@ class _RequestSummaryTile extends StatelessWidget {
                 height: 40,
                 width: 40,
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -753,7 +764,7 @@ class _RequestSummaryTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.14),
+                  color: statusColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -795,7 +806,7 @@ class _GradientButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Material(
-        color: enabled ? _green : _green.withOpacity(0.4),
+        color: enabled ? _green : _green.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: enabled ? onTap : null,
@@ -807,7 +818,7 @@ class _GradientButton extends StatelessWidget {
               boxShadow: enabled
                   ? [
                       BoxShadow(
-                        color: _green.withOpacity(0.35),
+                        color: _green.withValues(alpha: 0.35),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
                       ),
@@ -859,7 +870,7 @@ class _OutlineActionButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Material(
-        color: enabled ? color.withOpacity(0.06) : Colors.transparent,
+        color: enabled ? color.withValues(alpha: 0.06) : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: enabled ? onTap : null,
@@ -870,8 +881,8 @@ class _OutlineActionButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: enabled
-                    ? color.withOpacity(0.4)
-                    : color.withOpacity(0.15),
+                    ? color.withValues(alpha: 0.4)
+                    : color.withValues(alpha: 0.15),
                 width: 1.2,
               ),
             ),
@@ -880,14 +891,14 @@ class _OutlineActionButton extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  color: enabled ? color : color.withOpacity(0.4),
+                  color: enabled ? color : color.withValues(alpha: 0.4),
                   size: 18,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   label,
                   style: TextStyle(
-                    color: enabled ? color : color.withOpacity(0.4),
+                    color: enabled ? color : color.withValues(alpha: 0.4),
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -916,14 +927,14 @@ class _LockedBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: _lightGreen,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _green.withOpacity(0.2)),
+        border: Border.all(color: _green.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: _green.withOpacity(0.14),
+              color: _green.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -986,7 +997,7 @@ class _ConfirmDialog extends StatelessWidget {
               height: 56,
               width: 56,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.14),
+                color: iconColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(icon, color: iconColor, size: 28),
@@ -1006,7 +1017,7 @@ class _ConfirmDialog extends StatelessWidget {
               body,
               style: TextStyle(
                 fontSize: 13,
-                color: _textPrimary.withOpacity(0.7),
+                color: _textPrimary.withValues(alpha: 0.7),
                 height: 1.55,
               ),
             ),
@@ -1047,7 +1058,7 @@ class _ConfirmDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: confirmColor.withOpacity(0.35),
+                              color: confirmColor.withValues(alpha: 0.35),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),

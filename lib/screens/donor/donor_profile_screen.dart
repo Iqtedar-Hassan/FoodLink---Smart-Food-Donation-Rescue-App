@@ -41,17 +41,6 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
     super.dispose();
   }
 
-  String? _validatePhone(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Phone number is required.';
-    }
-    final digits = value.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (digits.length < 10 || digits.length > 15) {
-      return 'Enter a valid phone number.';
-    }
-    return null;
-  }
-
   Future<void> _editProfile() async {
     final donor = widget.repository.currentDonor;
     if (donor == null) return;
@@ -76,7 +65,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
         onDonorTypeChanged: (value) {
           if (value != null) _editDonorType = value;
         },
-        validatePhone: _validatePhone,
+        validatePhone: Validators.validatePhoneNumber,
       ),
     );
 
@@ -518,7 +507,7 @@ class _HeroHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: _darkGreen.withOpacity(0.2),
+            color: _darkGreen.withValues(alpha: 0.2),
             blurRadius: 22,
             offset: const Offset(0, 12),
           ),
@@ -534,12 +523,12 @@ class _HeroHeader extends StatelessWidget {
               shape: BoxShape.circle,
               color: Colors.white,
               border: Border.all(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 width: 4,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 14,
                   offset: const Offset(0, 6),
                 ),
@@ -573,7 +562,7 @@ class _HeroHeader extends StatelessWidget {
             email,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -585,9 +574,9 @@ class _HeroHeader extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
+                color: Colors.white.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withOpacity(0.25)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -595,7 +584,7 @@ class _HeroHeader extends StatelessWidget {
                   Icon(
                     Icons.verified_rounded,
                     size: 14,
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                   ),
                   const SizedBox(width: 6),
                   Flexible(
@@ -648,7 +637,7 @@ class _StatCard extends StatelessWidget {
           border: Border.all(color: _border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -659,7 +648,7 @@ class _StatCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 18),
@@ -718,7 +707,7 @@ class _ProfileField extends StatelessWidget {
         border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -802,7 +791,7 @@ class _GradientActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.35),
+                color: color.withValues(alpha: 0.35),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
@@ -849,7 +838,7 @@ class _OutlineActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withOpacity(0.06),
+      color: color.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,
@@ -858,7 +847,7 @@ class _OutlineActionButton extends StatelessWidget {
           height: 52,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withOpacity(0.4), width: 1.2),
+            border: Border.all(color: color.withValues(alpha: 0.4), width: 1.2),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -917,7 +906,7 @@ class _ConfirmDialog extends StatelessWidget {
               height: 56,
               width: 56,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.14),
+                color: iconColor.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(icon, color: iconColor, size: 28),
@@ -937,7 +926,7 @@ class _ConfirmDialog extends StatelessWidget {
               body,
               style: TextStyle(
                 fontSize: 13,
-                color: _textPrimary.withOpacity(0.7),
+                color: _textPrimary.withValues(alpha: 0.7),
                 height: 1.55,
               ),
             ),
@@ -978,7 +967,7 @@ class _ConfirmDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: confirmColor.withOpacity(0.35),
+                              color: confirmColor.withValues(alpha: 0.35),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -1063,7 +1052,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   height: 56,
                   width: 56,
                   decoration: BoxDecoration(
-                    color: _green.withOpacity(0.14),
+                    color: _green.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Icon(
@@ -1087,7 +1076,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   'Update your account information below.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: _textPrimary.withOpacity(0.65),
+                    color: _textPrimary.withValues(alpha: 0.65),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -1206,7 +1195,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: _green.withOpacity(0.35),
+                                  color: _green.withValues(alpha: 0.35),
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
                                 ),

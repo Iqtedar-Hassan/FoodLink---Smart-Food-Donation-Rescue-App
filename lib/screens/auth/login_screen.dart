@@ -4,6 +4,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/validators.dart';
 import '../../data/repositories/local_donation_repository.dart';
+import '../../models/user_role.dart';
 import '../../widgets/common/app_text_field.dart';
 import '../../widgets/common/button_loading.dart';
 
@@ -29,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color _primaryGreen = AppColors.primaryGreen;
   static const Color _greenDeep = Color(0xFF0E6B47);
   static const Color _greenSoft = Color(0xFFE8F6EF);
-  static const Color _amberAccent = Color(0xFFFFB547);
 
   void _fillDemoCredentials() {
     _emailController.text = AppConstants.demoEmail;
@@ -53,10 +53,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Simulated processing delay so the loading state is visible in the demo.
     await Future<void>.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
 
     try {
-      widget.repository.login(_emailController.text, _passwordController.text);
+      final role = widget.repository.login(
+        _emailController.text,
+        _passwordController.text,
+      );
       if (!mounted) return;
+
+      if (role != UserRole.donor) {
+        widget.repository.logout();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Your ${role.label} account was verified, but its dashboard is not available in this build.',
+            ),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -100,9 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final height = constraints.maxHeight;
-          final isLandscape = width > height;
-          final isTablet = width >= 600;
-          final useSplitLayout = isTablet || (isLandscape && width >= 700);
+          final useSplitLayout = width >= 900;
 
           final formContent = _FormContent(
             formKey: _formKey,
@@ -116,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
             onToggleRemember: (v) => setState(() => _rememberMe = v ?? false),
             onFillDemo: _fillDemoCredentials,
             onSubmit: _submit,
-            onSignup: () => Navigator.pushNamed(context, '/signup'),
+            onSignup: () => Navigator.pushNamed(context, '/role-selection'),
             isCompact: useSplitLayout,
           );
 
@@ -226,7 +244,7 @@ class _BrandingPanel extends StatelessWidget {
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -238,7 +256,7 @@ class _BrandingPanel extends StatelessWidget {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -254,7 +272,7 @@ class _BrandingPanel extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
+                        color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
@@ -290,7 +308,7 @@ class _BrandingPanel extends StatelessWidget {
                 Text(
                   'Join thousands of donors and NGOs making food rescue simple, fast, and impactful.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 15,
                     height: 1.5,
                   ),
@@ -319,9 +337,11 @@ class _BrandingPanel extends StatelessWidget {
                     vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.12),
+                    color: Colors.white.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.18)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
                   ),
                   child: Row(
                     children: const [
@@ -355,7 +375,7 @@ class _FeatureBullet extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.18),
+            color: Colors.white.withValues(alpha: 0.18),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: Colors.white, size: 14),
@@ -398,7 +418,7 @@ class _BrandStat extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 12,
             ),
           ),
@@ -416,7 +436,7 @@ class _VerticalDivider extends StatelessWidget {
     return Container(
       width: 1,
       height: 28,
-      color: Colors.white.withOpacity(0.25),
+      color: Colors.white.withValues(alpha: 0.25),
       margin: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
@@ -449,7 +469,7 @@ class _MobileHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: _LoginScreenState._primaryGreen.withOpacity(0.35),
+                color: _LoginScreenState._primaryGreen.withValues(alpha: 0.35),
                 blurRadius: 22,
                 offset: const Offset(0, 10),
               ),
@@ -467,7 +487,7 @@ class _MobileHeader extends StatelessWidget {
           'Sign in to manage your food donations and pickups.',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.black.withOpacity(0.6),
+            color: Colors.black.withValues(alpha: 0.6),
             fontSize: 14,
             height: 1.4,
           ),
@@ -533,7 +553,7 @@ class _FormContent extends StatelessWidget {
               'Use your donor credentials to continue.',
               style: TextStyle(
                 fontSize: 14,
-                color: AppColors.primaryText.withOpacity(0.65),
+                color: AppColors.primaryText.withValues(alpha: 0.65),
               ),
             ),
             const SizedBox(height: 24),
@@ -571,29 +591,36 @@ class _FormContent extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           // Remember + Forgot row
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: 4,
             children: [
-              SizedBox(
-                height: 24,
-                width: 24,
-                child: Checkbox(
-                  value: rememberMe,
-                  onChanged: onToggleRemember,
-                  activeColor: _LoginScreenState._primaryGreen,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: rememberMe,
+                      onChanged: onToggleRemember,
+                      activeColor: _LoginScreenState._primaryGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Remember me',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.primaryText.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Remember me',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.primaryText.withOpacity(0.8),
-                ),
-              ),
-              const Spacer(),
               TextButton(
                 onPressed: isSubmitting ? null : () {},
                 style: TextButton.styleFrom(
@@ -634,7 +661,7 @@ class _FormContent extends StatelessWidget {
                   'or continue with',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.primaryText.withOpacity(0.5),
+                    color: AppColors.primaryText.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -672,7 +699,7 @@ class _FormContent extends StatelessWidget {
                 "Don't have an account?",
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.primaryText.withOpacity(0.7),
+                  color: AppColors.primaryText.withValues(alpha: 0.7),
                 ),
               ),
               TextButton(
@@ -720,8 +747,8 @@ class _PrimaryButton extends StatelessWidget {
         gradient: LinearGradient(
           colors: isSubmitting
               ? [
-                  _LoginScreenState._primaryGreen.withOpacity(0.6),
-                  _LoginScreenState._greenDeep.withOpacity(0.6),
+                  _LoginScreenState._primaryGreen.withValues(alpha: 0.6),
+                  _LoginScreenState._greenDeep.withValues(alpha: 0.6),
                 ]
               : [_LoginScreenState._primaryGreen, _LoginScreenState._greenDeep],
           begin: Alignment.topLeft,
@@ -731,7 +758,9 @@ class _PrimaryButton extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: _LoginScreenState._primaryGreen.withOpacity(0.35),
+                  color: _LoginScreenState._primaryGreen.withValues(
+                    alpha: 0.35,
+                  ),
                   blurRadius: 18,
                   offset: const Offset(0, 10),
                 ),
@@ -788,7 +817,7 @@ class _SocialButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               width: 1.2,
             ),
           ),
@@ -830,7 +859,7 @@ class _DemoCredentialsBanner extends StatelessWidget {
         color: _LoginScreenState._greenSoft,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _LoginScreenState._primaryGreen.withOpacity(0.2),
+          color: _LoginScreenState._primaryGreen.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -838,7 +867,7 @@ class _DemoCredentialsBanner extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: _LoginScreenState._primaryGreen.withOpacity(0.14),
+              color: _LoginScreenState._primaryGreen.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
             child: Icon(

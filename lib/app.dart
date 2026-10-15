@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
 import 'data/repositories/local_donation_repository.dart';
+import 'models/user_role.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/role_selection_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/donor/create_donation_screen.dart';
 import 'screens/donor/donation_details_screen.dart';
@@ -10,7 +12,9 @@ import 'screens/donor/main_shell_screen.dart';
 import 'screens/splash/splash_screen.dart';
 
 class FoodLinkApp extends StatefulWidget {
-  const FoodLinkApp({super.key});
+  const FoodLinkApp({super.key, this.repository});
+
+  final FoodLinkRepository? repository;
 
   @override
   State<FoodLinkApp> createState() => _FoodLinkAppState();
@@ -19,7 +23,13 @@ class FoodLinkApp extends StatefulWidget {
 class _FoodLinkAppState extends State<FoodLinkApp> {
   // A single repository instance for the app lifetime so login state and mock
   // data survive any rebuilds of the MaterialApp.
-  final FoodLinkRepository _repository = FoodLinkRepository();
+  late final FoodLinkRepository _repository;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? FoodLinkRepository();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +49,20 @@ class _FoodLinkAppState extends State<FoodLinkApp> {
           '/donation-details',
         };
 
-        if (protectedRoutes.contains(name) && !_repository.isAuthenticated) {
-          return MaterialPageRoute(
-            builder: (_) => LoginScreen(repository: _repository),
-          );
+        if (protectedRoutes.contains(name)) {
+          if (!_repository.isAuthenticated) {
+            return MaterialPageRoute(
+              builder: (_) => LoginScreen(repository: _repository),
+            );
+          }
+
+          final role = _repository.currentDonor?.role;
+          if (role != UserRole.donor) {
+            return MaterialPageRoute(
+              builder: (_) =>
+                  _RoleAccessDeniedScreen(repository: _repository, role: role),
+            );
+          }
         }
 
         switch (name) {
@@ -54,9 +74,19 @@ class _FoodLinkAppState extends State<FoodLinkApp> {
             return MaterialPageRoute(
               builder: (_) => LoginScreen(repository: _repository),
             );
-          case '/signup':
+          case '/role-selection':
             return MaterialPageRoute(
-              builder: (_) => SignUpScreen(repository: _repository),
+              builder: (_) => RoleSelectionScreen(repository: _repository),
+            );
+          case '/signup':
+            final role = settings.arguments;
+            if (role is! UserRole || role == UserRole.admin) {
+              return MaterialPageRoute(
+                builder: (_) => RoleSelectionScreen(repository: _repository),
+              );
+            }
+            return MaterialPageRoute(
+              builder: (_) => SignUpScreen(repository: _repository, role: role),
             );
           case '/dashboard':
             return MaterialPageRoute(
@@ -101,6 +131,49 @@ class _FoodLinkAppState extends State<FoodLinkApp> {
             );
         }
       },
+    );
+  }
+}
+
+class _RoleAccessDeniedScreen extends StatelessWidget {
+  const _RoleAccessDeniedScreen({required this.repository, required this.role});
+
+  final FoodLinkRepository repository;
+  final UserRole? role;
+
+  @override
+  Widget build(BuildContext context) {
+    final roleName = role?.label ?? 'Unknown';
+    return Scaffold(
+      appBar: AppBar(title: const Text('Workspace unavailable')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_outline_rounded, size: 44),
+              const SizedBox(height: 16),
+              Text(
+                'The $roleName workspace is not available in this build.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () {
+                  repository.logout();
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/splash',
+                    (_) => false,
+                  );
+                },
+                child: const Text('Log out'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

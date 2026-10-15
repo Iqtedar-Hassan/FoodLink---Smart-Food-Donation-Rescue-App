@@ -37,7 +37,8 @@ class AppTheme {
 
   /// The maximum content width that body screens constrain themselves to so
   /// forms and text never stretch across a large tablet.
-  static double contentMaxWidth(double width) => width < tabletMin ? width : 640;
+  static double contentMaxWidth(double width) =>
+      width < tabletMin ? width : 640;
 
   /// Maximum width for authentication forms. Phones use nearly the full width
   /// with a comfortable margin; tablets keep a readable centered column.
@@ -138,21 +139,19 @@ class AppTheme {
   );
 
   static ThemeData get lightTheme {
-    final base = ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-    );
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primaryGreen,
-      primary: AppColors.primaryGreen,
-      secondary: AppColors.darkGreen,
-      surface: AppColors.white,
-      brightness: Brightness.light,
-    ).copyWith(
-      secondaryContainer: AppColors.lightGreen,
-      onSecondaryContainer: AppColors.darkGreen,
-      error: AppColors.errorRed,
-    );
+    final base = ThemeData(useMaterial3: true, brightness: Brightness.light);
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primaryGreen,
+          primary: AppColors.primaryGreen,
+          secondary: AppColors.darkGreen,
+          surface: AppColors.white,
+          brightness: Brightness.light,
+        ).copyWith(
+          secondaryContainer: AppColors.lightGreen,
+          onSecondaryContainer: AppColors.darkGreen,
+          error: AppColors.errorRed,
+        );
 
     return base.copyWith(
       scaffoldBackgroundColor: AppColors.warmBackground,
@@ -246,10 +245,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(compactRadius),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -260,19 +256,13 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(compactRadius),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.darkGreen,
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -288,9 +278,7 @@ class AppTheme {
           return TextStyle(
             fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            color: selected
-                ? AppColors.darkGreen
-                : AppColors.secondaryText,
+            color: selected ? AppColors.darkGreen : AppColors.secondaryText,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -313,9 +301,7 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: AppColors.darkGreen,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(999),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       ),
       dialogTheme: DialogThemeData(
@@ -357,9 +343,7 @@ class AppTheme {
         }),
         checkColor: WidgetStateProperty.all(AppColors.white),
         side: const BorderSide(color: AppColors.border, width: 1.4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: AppColors.primaryGreen,

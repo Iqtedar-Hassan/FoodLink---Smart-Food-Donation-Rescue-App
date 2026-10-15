@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_theme.dart';
 import '../data/repositories/local_donation_repository.dart';
-import '../screens/auth/login_screen.dart';
+import '../models/user_role.dart';
 import '../widgets/common/app_card.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
@@ -82,14 +82,11 @@ class RoleSelectionScreen extends StatelessWidget {
                     description:
                         'Donate surplus food from your home, '
                         'restaurant, bakery or shop.',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => LoginScreen(repository: repository),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/signup',
+                      arguments: UserRole.donor,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _RoleCard(
@@ -98,16 +95,20 @@ class RoleSelectionScreen extends StatelessWidget {
                     description:
                         'Discover available food donations and '
                         'request pickups for people in need.',
-                    onTap: () => _showRoleMessage(context, 'NGO'),
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/signup',
+                      arguments: UserRole.ngo,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _RoleCard(
                     icon: Icons.admin_panel_settings_outlined,
                     title: 'Administrator',
                     description:
-                        'Monitor users, donations and '
-                        'overall platform activity.',
-                    onTap: () => _showRoleMessage(context, 'Administrator'),
+                        'Sign in to review accounts, donations and '
+                        'platform activity.',
+                    onTap: () => Navigator.pushNamed(context, '/login'),
                   ),
                   const SizedBox(height: 28),
                   const Text(
@@ -124,16 +125,6 @@ class RoleSelectionScreen extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  static void _showRoleMessage(BuildContext context, String role) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$role selected'),
-        backgroundColor: darkGreen,
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -160,9 +151,9 @@ class _RoleCard extends StatelessWidget {
     return AppCard(
       onTap: onTap,
       padding: const EdgeInsets.all(18),
-      child: Row(
-        children: [
-          Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final iconTile = Container(
             height: 58,
             width: 58,
             decoration: BoxDecoration(
@@ -170,35 +161,51 @@ class _RoleCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppTheme.compactRadius),
             ),
             child: Icon(icon, size: 30, color: primaryGreen),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
+          );
+          final roleDescription = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: darkGreen,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          );
+
+          if (constraints.maxWidth < 200) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: darkGreen,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.4,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(Icons.arrow_forward_ios, size: 17, color: primaryGreen),
-        ],
+              children: [iconTile, const SizedBox(height: 12), roleDescription],
+            );
+          }
+
+          return Row(
+            children: [
+              iconTile,
+              const SizedBox(width: 16),
+              Expanded(child: roleDescription),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 17,
+                color: primaryGreen,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

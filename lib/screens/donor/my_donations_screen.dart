@@ -1,10 +1,38 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
+import '../../core/utils/date_time_utils.dart';
 import '../../data/repositories/local_donation_repository.dart';
 import '../../models/food_donation.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/donations/donation_card.dart';
+
+// ============================================================
+// Design tokens — EXACTLY the same palette as the Dashboard
+// so both screens look consistent. All values chosen for
+// HIGH CONTRAST on mobile.
+// ============================================================
+const Color _primaryGreen = Color(0xFF117A50);
+const Color _darkGreen = Color(0xFF0B6842);
+const Color _background = Color(0xFFF3F6F4);
+const Color _textPrimary = Color(0xFF14251C);
+const Color _textSecondary = Color(0xFF3D4E44);
+const Color _border = Color(0xFFC4D3C9);
+
+// Subtle shadow used on every white card (same as dashboard).
+const List<BoxShadow> _cardShadow = [
+  BoxShadow(color: Color(0x14323223), blurRadius: 10, offset: Offset(0, 4)),
+];
+
+// Status colors — darker shades so the WHITE text on selected
+// chips is always easy to read.
+const Map<String, Color> _statusColors = {
+  'All': _primaryGreen,
+  'Available': _primaryGreen,
+  'Reserved': Color(0xFF35619F), // dark blue
+  'Collected': Color(0xFFA96208), // dark amber
+  'Delivered': _darkGreen,
+  'Cancelled': Color(0xFFB23A3A), // dark red
+};
 
 class MyDonationsScreen extends StatefulWidget {
   const MyDonationsScreen({super.key, required this.repository});
@@ -19,14 +47,6 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   String _statusFilter = 'All';
   String _searchQuery = '';
 
-  // Same brand palette as Login / Signup / Dashboard
-  static const Color green = AppColors.primaryGreen;
-  static const Color background = AppColors.warmBackground;
-  static const Color darkGreen = Color(0xFF106B49);
-  static const Color textPrimary = Color(0xFF19352A);
-  static const Color textSecondary = Color(0xFF738178);
-  static const Color border = Color(0xFFE8EDE8);
-
   static const List<String> _statusFilters = [
     'All',
     'Available',
@@ -36,25 +56,16 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
     'Cancelled',
   ];
 
-  static const Map<String, Color> _statusColors = {
-    'All': green,
-    'Available': Color(0xFF19845A),
-    'Reserved': Color(0xFF4778C7),
-    'Collected': Color(0xFFD58A19),
-    'Delivered': Color(0xFF0E6B47),
-    'Cancelled': Color(0xFFCB4A4A),
-  };
-
   List<FoodDonation> _filteredDonations() {
-    final donations = widget.repository.donorDonations;
-    return donations.where((donation) {
+    final query = _searchQuery.trim().toLowerCase();
+    return widget.repository.donorDonations.where((donation) {
       final matchesStatus =
-          _statusFilter == 'All' || donation.status.label == _statusFilter;
+          _statusFilter == 'All' ||
+          (donation.status.label == _statusFilter &&
+              (_statusFilter != 'Available' ||
+                  !DateTimeUtils.isPastDeadline(donation.safeUseDeadline)));
       final matchesSearch =
-          _searchQuery.trim().isEmpty ||
-          donation.foodName.toLowerCase().contains(
-            _searchQuery.trim().toLowerCase(),
-          );
+          query.isEmpty || donation.foodName.toLowerCase().contains(query);
       return matchesStatus && matchesSearch;
     }).toList();
   }
@@ -64,133 +75,94 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
     return ListenableBuilder(
       listenable: widget.repository,
       builder: (context, _) {
-        final donations = widget.repository.donorDonations;
+        final allDonations = widget.repository.donorDonations;
         final filtered = _filteredDonations();
         final isFiltering =
             _statusFilter != 'All' || _searchQuery.trim().isNotEmpty;
 
         return Scaffold(
-          backgroundColor: background,
-          appBar: _buildAppBar(context),
+          backgroundColor: _background,
+          appBar: _buildAppBar(),
           body: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                final horizontalPadding = width >= 1100
-                    ? 48.0
-                    : width >= 700
-                    ? 32.0
-                    : 20.0;
-                final contentWidth = width >= 1200 ? 1100.0 : 900.0;
-
-                return Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: contentWidth),
-                    child: donations.isEmpty
-                        ? _buildInitialEmptyState(horizontalPadding)
-                        : CustomScrollView(
-                            physics: const BouncingScrollPhysics(
-                              parent: AlwaysScrollableScrollPhysics(),
-                            ),
-                            slivers: [
-                              // ---- Summary gradient card
-                              SliverPadding(
-                                padding: EdgeInsets.fromLTRB(
-                                  horizontalPadding,
-                                  16,
-                                  horizontalPadding,
-                                  14,
-                                ),
-                                sliver: SliverToBoxAdapter(
-                                  child: _buildSummaryCard(
-                                    donations,
-                                    filtered.length,
-                                  ),
-                                ),
-                              ),
-                              // ---- Search field
-                              SliverPadding(
-                                padding: EdgeInsets.fromLTRB(
-                                  horizontalPadding,
-                                  0,
-                                  horizontalPadding,
-                                  14,
-                                ),
-                                sliver: SliverToBoxAdapter(
-                                  child: _buildSearchField(),
-                                ),
-                              ),
-                              // ---- Filter chips
-                              SliverPadding(
-                                padding: EdgeInsets.fromLTRB(
-                                  horizontalPadding,
-                                  0,
-                                  horizontalPadding,
-                                  10,
-                                ),
-                                sliver: SliverToBoxAdapter(
-                                  child: _buildFilterChips(),
-                                ),
-                              ),
-                              // ---- Count text
-                              SliverPadding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: horizontalPadding,
-                                  vertical: 4,
-                                ),
-                                sliver: SliverToBoxAdapter(
-                                  child: _buildCountRow(
-                                    filtered.length,
-                                    donations.length,
-                                  ),
-                                ),
-                              ),
-                              // ---- Donation list (or empty state)
-                              SliverPadding(
-                                padding: EdgeInsets.fromLTRB(
-                                  horizontalPadding,
-                                  8,
-                                  horizontalPadding,
-                                  36,
-                                ),
-                                sliver: filtered.isEmpty
-                                    ? SliverToBoxAdapter(
-                                        child: EmptyState(
-                                          icon: Icons.search_off_rounded,
-                                          message: isFiltering
-                                              ? 'No donations match your current '
-                                                    'filters. Try a different status '
-                                                    'or search term.'
-                                              : 'No donations to show yet.',
-                                        ),
-                                      )
-                                    : SliverList(
-                                        delegate: SliverChildBuilderDelegate((
-                                          context,
-                                          index,
-                                        ) {
-                                          final donation = filtered[index];
-                                          return Padding(
-                                            padding: const EdgeInsets.only(
-                                              bottom: 12,
-                                            ),
-                                            child: DonationCard(
-                                              donation: donation,
-                                              onTap: () => Navigator.pushNamed(
-                                                context,
-                                                '/donation-details',
-                                                arguments: donation.id,
-                                              ),
-                                            ),
-                                          );
-                                        }, childCount: filtered.length),
-                                      ),
-                              ),
-                            ],
-                          ),
+            child: allDonations.isEmpty
+                ? _buildInitialEmptyState()
+                : _buildContent(
+                    filtered: filtered,
+                    totalCount: allDonations.length,
+                    isFiltering: isFiltering,
                   ),
-                );
-              },
+          ),
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // MAIN CONTENT — one simple ListView (no slivers, easy to read)
+  // ============================================================
+  Widget _buildContent({
+    required List<FoodDonation> filtered,
+    required int totalCount,
+    required bool isFiltering,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final hPadding = width >= 1100
+            ? 48.0
+            : width >= 700
+            ? 32.0
+            : 16.0;
+        final maxContentWidth = width >= 1200 ? 1100.0 : 900.0;
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            child: ListView(
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              padding: EdgeInsets.fromLTRB(hPadding, 16, hPadding, 32),
+              children: [
+                // ---- Summary card
+                _buildSummaryCard(
+                  totalDonations: totalCount,
+                  showing: filtered.length,
+                ),
+                const SizedBox(height: 14),
+
+                // ---- Search field
+                _buildSearchField(),
+                const SizedBox(height: 12),
+
+                // ---- Filter chips
+                _buildFilterChips(),
+                const SizedBox(height: 10),
+
+                // ---- Donation list (or empty state)
+                if (filtered.isEmpty)
+                  EmptyState(
+                    icon: Icons.search_off_rounded,
+                    message: isFiltering
+                        ? 'No donations match your filters. Try a different '
+                              'status or search term.'
+                        : 'No donations to show yet.',
+                  )
+                else
+                  ...filtered.map(
+                    (donation) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: DonationCard(
+                        donation: donation,
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/donation-details',
+                          arguments: donation.id,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         );
@@ -199,12 +171,12 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   }
 
   // ============================================================
-  // APP BAR — matches DonorDashboard style
+  // APP BAR — same style as the Dashboard
   // ============================================================
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: background,
-      foregroundColor: textPrimary,
+      backgroundColor: _background,
+      foregroundColor: _textPrimary,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
@@ -218,7 +190,7 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
             height: 42,
             width: 42,
             decoration: BoxDecoration(
-              color: green,
+              color: _primaryGreen,
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -235,21 +207,25 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
               children: [
                 Text(
                   'My Donations',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.6,
-                    color: textPrimary,
+                    color: _textPrimary,
                   ),
                 ),
                 SizedBox(height: 2),
                 Text(
                   'TRACK YOUR CONTRIBUTIONS',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.5,
-                    color: textSecondary,
+                    letterSpacing: 1.4,
+                    color: _textSecondary,
                   ),
                 ),
               ],
@@ -264,7 +240,7 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
             tooltip: 'Add Food Donation',
             onPressed: () => Navigator.pushNamed(context, '/create-donation'),
             style: IconButton.styleFrom(
-              backgroundColor: green,
+              backgroundColor: _primaryGreen,
               foregroundColor: Colors.white,
               fixedSize: const Size(46, 46),
             ),
@@ -276,27 +252,34 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   }
 
   // ============================================================
-  // SUMMARY CARD — gradient with status breakdown pills
+  // SUMMARY CARD — clean and simple (same design as the Pickup
+  // Requests card):
+  // title → big number → thin divider → inline stats (no boxes)
   // ============================================================
-  Widget _buildSummaryCard(List<FoodDonation> donations, int showingCount) {
-    int countByStatus(String label) {
-      if (label == 'All') return donations.length;
-      return donations.where((d) => d.status.label == label).length;
-    }
+  Widget _buildSummaryCard({
+    required int totalDonations,
+    required int showing,
+  }) {
+    int countByStatus(String label) => widget.repository.donorDonations
+        .where((d) => d.status.label == label)
+        .length;
+
+    final availableCount = widget.repository.availableDonations;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF19845A), Color(0xFF106B49)],
+          colors: [_primaryGreen, _darkGreen],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: darkGreen.withOpacity(0.18),
-            blurRadius: 18,
+            color: _darkGreen.withValues(alpha: 0.25),
+            blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
@@ -304,96 +287,80 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Title
+          const Text(
+            'Total Donations',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Big number + label + showing count
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'YOUR DONATIONS',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${donations.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 34,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1,
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            donations.length == 1 ? 'item' : 'items total',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+              Text(
+                '$totalDonations',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'SHOWING',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                      ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    totalDonations == 1 ? 'item total' : 'items total',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$showingCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '$showing total',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          // Status breakdown pills
+
+          // Thin divider
+          Divider(
+            color: Colors.white.withValues(alpha: 0.25),
+            thickness: 1,
+            height: 1,
+          ),
+          const SizedBox(height: 12),
+
+          // Simple inline stats — no boxes
           Row(
             children: [
-              _miniStat('Available', countByStatus('Available')),
-              const SizedBox(width: 8),
-              _miniStat('Reserved', countByStatus('Reserved')),
-              const SizedBox(width: 8),
-              _miniStat('Delivered', countByStatus('Delivered')),
+              Expanded(child: _summaryStat('Available', availableCount)),
+              Expanded(
+                child: _summaryStat('Reserved', countByStatus('Reserved')),
+              ),
+              Expanded(
+                child: _summaryStat('Delivered', countByStatus('Delivered')),
+              ),
             ],
           ),
         ],
@@ -401,88 +368,75 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
     );
   }
 
-  Widget _miniStat(String label, int count) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
+  Widget _summaryStat(String label, int value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          '$value',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        child: Column(
-          children: [
-            Text(
-              '$count',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.85),
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        const SizedBox(height: 3),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
+      ],
     );
   }
 
   // ============================================================
-  // SEARCH FIELD — white card with subtle shadow
+  // SEARCH FIELD — white card, strong border, dark readable text
   // ============================================================
   Widget _buildSearchField() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: _border, width: 1.2),
+        boxShadow: _cardShadow,
       ),
       child: TextField(
         onChanged: (value) => setState(() => _searchQuery = value),
         textInputAction: TextInputAction.search,
         style: const TextStyle(
-          color: textPrimary,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+          color: _textPrimary,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
         ),
         decoration: InputDecoration(
           hintText: 'Search by food name',
-          hintStyle: TextStyle(
-            color: textSecondary.withOpacity(0.7),
-            fontSize: 14,
+          hintStyle: const TextStyle(
+            color: _textSecondary,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: const Icon(
             Icons.search_rounded,
-            color: textSecondary,
-            size: 22,
+            color: _primaryGreen,
+            size: 24,
           ),
           suffixIcon: _searchQuery.isEmpty
               ? null
               : IconButton(
                   tooltip: 'Clear search',
                   icon: const Icon(Icons.clear_rounded, size: 20),
-                  color: textSecondary,
+                  color: _textSecondary,
                   onPressed: () => setState(() => _searchQuery = ''),
                 ),
           border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 14,
@@ -493,7 +447,7 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   }
 
   // ============================================================
-  // FILTER CHIPS — status-colored, custom design
+  // FILTER CHIPS — one horizontal scrollable row (same as you had)
   // ============================================================
   Widget _buildFilterChips() {
     return SizedBox(
@@ -504,17 +458,13 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
           parent: AlwaysScrollableScrollPhysics(),
         ),
         itemCount: _statusFilters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final filter = _statusFilters[index];
-          final selected = _statusFilter == filter;
-          final color = _statusColors[filter] ?? green;
           return _FilterChip(
             label: filter,
-            selected: selected,
-            color: color,
-            borderColor: border,
-            textColor: textSecondary,
+            selected: _statusFilter == filter,
+            color: _statusColors[filter] ?? _primaryGreen,
             onTap: () => setState(() => _statusFilter = filter),
           );
         },
@@ -523,28 +473,11 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
   }
 
   // ============================================================
-  // COUNT TEXT
+  // INITIAL EMPTY STATE (no donations at all)
   // ============================================================
-  Widget _buildCountRow(int filteredCount, int totalCount) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        'Showing $filteredCount of $totalCount donations',
-        style: const TextStyle(
-          color: textSecondary,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // INITIAL EMPTY STATE (no donations yet)
-  // ============================================================
-  Widget _buildInitialEmptyState(double horizontalPadding) {
+  Widget _buildInitialEmptyState() {
     return Padding(
-      padding: EdgeInsets.all(horizontalPadding),
+      padding: const EdgeInsets.all(24),
       child: EmptyState(
         message:
             'You have not added any donations yet. Share your first surplus '
@@ -557,24 +490,22 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
 }
 
 // ============================================================
-// CUSTOM FILTER CHIP
+// FILTER CHIP — simple and high contrast:
+//  - unselected: white background + dark text + visible border
+//  - selected: solid dark status color + white bold text + check
 // ============================================================
 class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final Color color;
-  final Color borderColor;
-  final Color textColor;
-  final VoidCallback onTap;
-
   const _FilterChip({
     required this.label,
     required this.selected,
     required this.color,
-    required this.borderColor,
-    required this.textColor,
     required this.onTap,
   });
+
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -584,15 +515,11 @@ class _FilterChip extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(22),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: selected ? color : borderColor,
-              width: 1.2,
-            ),
+            border: Border.all(color: selected ? color : _border, width: 1.4),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -600,21 +527,14 @@ class _FilterChip extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: selected ? Colors.white : textColor,
+                  color: selected ? Colors.white : _textPrimary,
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               if (selected) ...[
                 const SizedBox(width: 6),
-                Container(
-                  width: 5,
-                  height: 5,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+                const Icon(Icons.check_rounded, color: Colors.white, size: 15),
               ],
             ],
           ),

@@ -50,10 +50,9 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveKeyboardType =
-        obscureText && keyboardType == null
-            ? TextInputType.visiblePassword
-            : keyboardType;
+    final effectiveKeyboardType = obscureText && keyboardType == null
+        ? TextInputType.visiblePassword
+        : keyboardType;
 
     return TextFormField(
       controller: controller,

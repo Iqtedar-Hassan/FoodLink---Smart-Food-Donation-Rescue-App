@@ -66,7 +66,9 @@ class _SplashScreenState extends State<SplashScreen>
                     vertical: AppTheme.space2xl,
                   ),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: FadeTransition(
                       opacity: _fadeAnimation,
                       child: SlideTransition(
@@ -103,8 +105,10 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                             const SizedBox(height: AppTheme.space3xl),
                             ElevatedButton(
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/signup'),
+                              onPressed: () => Navigator.pushNamed(
+                                context,
+                                '/role-selection',
+                              ),
                               child: const Text('Get Started'),
                             ),
                             const SizedBox(height: AppTheme.spaceMd),
