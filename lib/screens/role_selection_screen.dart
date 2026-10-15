@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 
-import 'donor_dashboard.dart';
-import 'ngo_dashboard.dart';
-import 'admin_dashboard.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_theme.dart';
+import '../data/repositories/local_donation_repository.dart';
+import '../models/user_role.dart';
+import '../widgets/common/app_card.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
-  const RoleSelectionScreen({super.key});
+  const RoleSelectionScreen({super.key, required this.repository});
 
-  static const Color primaryGreen = Color(0xFF16845B);
-  static const Color darkGreen = Color(0xFF105C40);
+  final FoodLinkRepository repository;
+
+  static const Color primaryGreen = AppColors.primaryGreen;
+  static const Color darkGreen = AppColors.darkGreen;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF8),
+      backgroundColor: AppColors.warmBackground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7FAF8),
+        backgroundColor: AppColors.warmBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: darkGreen),
@@ -32,18 +36,17 @@ class RoleSelectionScreen extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppTheme.pagePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 12),
-
                   Container(
                     height: 100,
                     width: 100,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE1F3E9),
-                      borderRadius: BorderRadius.circular(28),
+                      color: AppColors.lightGreen,
+                      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                     ),
                     child: const Icon(
                       Icons.volunteer_activism,
@@ -51,9 +54,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       color: primaryGreen,
                     ),
                   ),
-
                   const SizedBox(height: 28),
-
                   const Text(
                     'How would you like to help?',
                     textAlign: TextAlign.center,
@@ -63,9 +64,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       color: darkGreen,
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   const Text(
                     'Choose your role to continue with FoodLink '
                     'and help reduce food waste in your community.',
@@ -76,61 +75,42 @@ class RoleSelectionScreen extends StatelessWidget {
                       color: Colors.black54,
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
                   _RoleCard(
                     icon: Icons.storefront_outlined,
                     title: 'Food Donor',
                     description:
                         'Donate surplus food from your home, '
                         'restaurant, bakery or shop.',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const DonorDashboard(),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/signup',
+                      arguments: UserRole.donor,
+                    ),
                   ),
-
                   const SizedBox(height: 16),
-
                   _RoleCard(
                     icon: Icons.volunteer_activism_outlined,
                     title: 'NGO / Welfare Organization',
                     description:
                         'Discover available food donations and '
                         'request pickups for people in need.',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const NgoDashboard()),
-                      );
-                    },
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/signup',
+                      arguments: UserRole.ngo,
+                    ),
                   ),
-
                   const SizedBox(height: 16),
-
                   _RoleCard(
                     icon: Icons.admin_panel_settings_outlined,
                     title: 'Administrator',
                     description:
-                        'Monitor users, donations and '
-                        'overall platform activity.',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminDashboard(),
-                        ),
-                      );
-                    },
+                        'Sign in to review accounts, donations and '
+                        'platform activity.',
+                    onTap: () => Navigator.pushNamed(context, '/login'),
                   ),
-
                   const SizedBox(height: 28),
-
                   const Text(
                     'Together, we can rescue food and reduce waste.',
                     textAlign: TextAlign.center,
@@ -145,16 +125,6 @@ class RoleSelectionScreen extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  static void _showRoleMessage(BuildContext context, String role) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$role selected'),
-        backgroundColor: darkGreen,
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -173,72 +143,69 @@ class _RoleCard extends StatelessWidget {
     required this.onTap,
   });
 
-  static const Color primaryGreen = Color(0xFF16845B);
-  static const Color darkGreen = Color(0xFF105C40);
+  static const Color primaryGreen = AppColors.primaryGreen;
+  static const Color darkGreen = AppColors.darkGreen;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFDCEBE1)),
-          ),
-          child: Row(
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(18),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final iconTile = Container(
+            height: 58,
+            width: 58,
+            decoration: BoxDecoration(
+              color: AppColors.lightGreen,
+              borderRadius: BorderRadius.circular(AppTheme.compactRadius),
+            ),
+            child: Icon(icon, size: 30, color: primaryGreen),
+          );
+          final roleDescription = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 58,
-                width: 58,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5F5EC),
-                  borderRadius: BorderRadius.circular(16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: darkGreen,
                 ),
-                child: Icon(icon, size: 30, color: primaryGreen),
               ),
+              const SizedBox(height: 6),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.4,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          );
 
+          if (constraints.maxWidth < 200) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [iconTile, const SizedBox(height: 12), roleDescription],
+            );
+          }
+
+          return Row(
+            children: [
+              iconTile,
               const SizedBox(width: 16),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: darkGreen,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
+              Expanded(child: roleDescription),
               const SizedBox(width: 8),
-
               const Icon(
                 Icons.arrow_forward_ios,
                 size: 17,
                 color: primaryGreen,
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
