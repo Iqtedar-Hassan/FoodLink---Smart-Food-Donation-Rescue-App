@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/donation_model.dart';
 import '../services/donation_service.dart';
 
 class NgoDashboard extends StatelessWidget {
@@ -11,7 +10,7 @@ class NgoDashboard extends StatelessWidget {
   void _requestPickup(BuildContext context, String food) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Pickup request sent for $food! (Demo only)'),
+        content: Text('Pickup request sent for $food! '),
         backgroundColor: green,
       ),
     );
