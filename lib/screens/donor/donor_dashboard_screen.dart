@@ -97,7 +97,7 @@ class DonorDashboardScreen extends StatelessWidget {
                           _DonationOverviewCard(
                             total: repository.totalDonations,
                             available: repository.availableDonations,
-                            pendingPickups: repository.pendingPickupRequests,
+                            pickupRequests: repository.donorPickupRequests.length,
                             completed: repository.completedDonations,
                           ),
                           const SizedBox(height: 26),
@@ -408,13 +408,13 @@ class _DonationOverviewCard extends StatelessWidget {
   const _DonationOverviewCard({
     required this.total,
     required this.available,
-    required this.pendingPickups,
+    required this.pickupRequests,
     required this.completed,
   });
 
   final int total;
   final int available;
-  final int pendingPickups;
+  final int pickupRequests;
   final int completed;
 
   @override
@@ -514,7 +514,7 @@ class _DonationOverviewCard extends StatelessWidget {
               Expanded(
                 child: _StatPanel(
                   label: 'Pickup Requests',
-                  value: pendingPickups,
+                  value: pickupRequests,
                 ),
               ),
               const SizedBox(width: 10),

@@ -312,7 +312,7 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Flexible(
+              Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
@@ -327,15 +327,19 @@ class _MyDonationsScreenState extends State<MyDonationsScreen> {
                   ),
                 ),
               ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '$showing total',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      '$showing total',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ),
