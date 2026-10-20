@@ -10,6 +10,8 @@ import 'screens/donor/create_donation_screen.dart';
 import 'screens/donor/donation_details_screen.dart';
 import 'screens/donor/main_shell_screen.dart';
 import 'screens/splash/splash_screen.dart';
+import 'screens/ngo/ngo_dashboard_screen.dart';
+import 'screens/admin_dashboard.dart';
 
 class FoodLinkApp extends StatefulWidget {
   const FoodLinkApp({super.key, this.repository});
@@ -47,6 +49,8 @@ class _FoodLinkAppState extends State<FoodLinkApp> {
           '/profile',
           '/create-donation',
           '/donation-details',
+          '/ngo-dashboard',
+          '/admin-dashboard',
         };
 
         if (protectedRoutes.contains(name)) {
@@ -57,7 +61,31 @@ class _FoodLinkAppState extends State<FoodLinkApp> {
           }
 
           final role = _repository.currentDonor?.role;
-          if (role != UserRole.donor) {
+
+          final donorRoutes = <String>{
+            '/dashboard',
+            '/my-donations',
+            '/pickup-requests',
+            '/profile',
+            '/create-donation',
+            '/donation-details',
+          };
+
+          if (donorRoutes.contains(name) && role != UserRole.donor) {
+            return MaterialPageRoute(
+              builder: (_) =>
+                  _RoleAccessDeniedScreen(repository: _repository, role: role),
+            );
+          }
+
+          if (name == '/ngo-dashboard' && role != UserRole.ngo) {
+            return MaterialPageRoute(
+              builder: (_) =>
+                  _RoleAccessDeniedScreen(repository: _repository, role: role),
+            );
+          }
+
+          if (name == '/admin-dashboard' && role != UserRole.admin) {
             return MaterialPageRoute(
               builder: (_) =>
                   _RoleAccessDeniedScreen(repository: _repository, role: role),
@@ -124,6 +152,14 @@ class _FoodLinkAppState extends State<FoodLinkApp> {
                 repository: _repository,
                 donationId: donationId,
               ),
+            );
+          case '/ngo-dashboard':
+            return MaterialPageRoute(
+              builder: (_) => NgoDashboardScreen(repository: _repository),
+            );
+          case '/admin-dashboard':
+            return MaterialPageRoute(
+              builder: (_) => AdminDashboard(repository: _repository),
             );
           default:
             return MaterialPageRoute(

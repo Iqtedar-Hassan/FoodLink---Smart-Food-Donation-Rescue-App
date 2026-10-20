@@ -581,6 +581,10 @@ class _RequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPending = request.status == PickupRequestStatus.pending;
     final statusColor = _statusColors[request.status.label] ?? _primaryGreen;
+    final hasNgoProfile =
+        request.ngoDescription.isNotEmpty ||
+        request.ngoWorkingArea.isNotEmpty ||
+        request.ngoCommunitiesServed.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -711,6 +715,64 @@ class _RequestCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+          ],
+
+          if (hasNgoProfile) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _lightGreen,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'About this NGO',
+                    style: TextStyle(
+                      color: _darkGreen,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (request.ngoDescription.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      request.ngoDescription,
+                      style: const TextStyle(
+                        color: _textPrimary,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                  if (request.ngoWorkingArea.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      'Working area: ${request.ngoWorkingArea}',
+                      style: const TextStyle(
+                        color: _textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                  if (request.ngoCommunitiesServed.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      'Serves: ${request.ngoCommunitiesServed}',
+                      style: const TextStyle(
+                        color: _textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

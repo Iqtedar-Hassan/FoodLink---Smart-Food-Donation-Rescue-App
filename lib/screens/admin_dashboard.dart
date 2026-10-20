@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../data/repositories/local_donation_repository.dart';
+import '../models/user_role.dart';
+
 class AdminDashboard extends StatelessWidget {
-  const AdminDashboard({super.key});
+  const AdminDashboard({super.key, required this.repository});
+
+  final FoodLinkRepository repository;
 
   static const Color green = Color(0xFF16845B);
 
@@ -13,6 +18,20 @@ class AdminDashboard extends StatelessWidget {
         title: const Text('FoodLink - Admin'),
         backgroundColor: green,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            tooltip: 'Log out',
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              repository.logout();
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (_) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -85,6 +104,13 @@ class AdminDashboard extends StatelessWidget {
             const SizedBox(height: 12),
 
             _AdminOption(
+              icon: Icons.person_add_alt_1_outlined,
+              title: 'Create Admin Account',
+              subtitle: 'Add an administrator for this app session',
+              onTap: () => _showCreateAdminDialog(context),
+            ),
+
+            _AdminOption(
               icon: Icons.people_outline,
               title: 'Manage Users',
               subtitle: 'View donor and NGO accounts',
@@ -114,6 +140,140 @@ class AdminDashboard extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('$feature will be available soon.')));
+  }
+
+  Future<void> _showCreateAdminDialog(BuildContext context) async {
+    if (repository.currentDonor?.role != UserRole.admin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only an administrator can create accounts.'),
+        ),
+      );
+      return;
+    }
+
+    final account = await showDialog<_AdminAccountDetails>(
+      context: context,
+      builder: (_) => const _CreateAdminDialog(),
+    );
+    if (account == null || !context.mounted) return;
+
+    try {
+      repository.createAdminAccount(
+        fullName: account.fullName,
+        email: account.email,
+        phone: account.phone,
+        password: account.password,
+      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Admin account created.')));
+    } on StateError catch (error) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+}
+
+class _AdminAccountDetails {
+  const _AdminAccountDetails({
+    required this.fullName,
+    required this.email,
+    required this.phone,
+    required this.password,
+  });
+
+  final String fullName;
+  final String email;
+  final String phone;
+  final String password;
+}
+
+class _CreateAdminDialog extends StatefulWidget {
+  const _CreateAdminDialog();
+
+  @override
+  State<_CreateAdminDialog> createState() => _CreateAdminDialogState();
+}
+
+class _CreateAdminDialogState extends State<_CreateAdminDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  String? _required(String? value) =>
+      value == null || value.trim().isEmpty ? 'Required.' : null;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Create Admin Account'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Full name'),
+                validator: _required,
+              ),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email'),
+                keyboardType: TextInputType.emailAddress,
+                validator: _required,
+              ),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: 'Phone'),
+                keyboardType: TextInputType.phone,
+                validator: _required,
+              ),
+              TextFormField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                validator: _required,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) return;
+            Navigator.pop(
+              context,
+              _AdminAccountDetails(
+                fullName: _nameController.text,
+                email: _emailController.text,
+                phone: _phoneController.text,
+                password: _passwordController.text,
+              ),
+            );
+          },
+          child: const Text('Create'),
+        ),
+      ],
+    );
   }
 }
 

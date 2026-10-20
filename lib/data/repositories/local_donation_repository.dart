@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import '../../core/constants/app_constants.dart';
 import '../../core/utils/date_time_utils.dart';
 import '../../models/donor.dart';
 import '../../models/food_donation.dart';
@@ -12,19 +11,49 @@ class FoodLinkRepository extends ChangeNotifier {
     _donors = [
       Donor(
         id: 'donor_1',
-        fullName: 'Ayesha Khan',
-        email: AppConstants.demoEmail,
+        fullName: 'Iqtedar Donor',
+        email: 'iqtedaronor@gmail.com',
         phone: '+923001234567',
-        password: AppConstants.demoPassword,
+        password: 'Pass12345',
         donorType: 'Restaurant',
       ),
       Donor(
         id: 'donor_2',
-        fullName: 'Muneeb Ali',
-        email: 'muneeb@foodlink.demo',
+        fullName: 'Adeel Donor',
+        email: 'adeeldonor@gmail.com',
+        phone: '+923335556677',
+        password: 'Pass12345',
+        donorType: 'Household',
+      ),
+      Donor(
+        id: 'ngo_1',
+        fullName: 'Iqtedar NGO',
+        email: 'iqtedarNGO@gmail.com',
+        phone: '+923001112223',
+        password: 'Pass1234',
+        role: UserRole.ngo,
+        ngoDescription: 'Supporting local communities through food rescue.',
+        workingArea: 'Islamabad',
+        communitiesServed: 'Families in need',
+      ),
+      Donor(
+        id: 'ngo_2',
+        fullName: 'Adeel NGO',
+        email: 'adeelNGO@gmail.com',
         phone: '+923335556677',
         password: 'Pass1234',
-        donorType: 'Household',
+        role: UserRole.ngo,
+        ngoDescription: 'Connecting surplus food with nearby communities.',
+        workingArea: 'Rawalpindi',
+        communitiesServed: 'Community kitchens and shelters',
+      ),
+      Donor(
+        id: 'admin_1',
+        fullName: 'FoodLink Administrator',
+        email: 'admin@gmail.com',
+        phone: '',
+        password: 'Admin@12345',
+        role: UserRole.admin,
       ),
     ];
 
@@ -192,6 +221,7 @@ class FoodLinkRepository extends ChangeNotifier {
   late List<PickupRequest> _pickupRequests;
   Donor? _currentDonor;
   int _lastGeneratedDonationId = 0;
+  int _lastGeneratedAccountId = 0;
 
   Donor? get currentDonor => _currentDonor;
   List<Donor> get donors => List.unmodifiable(_donors);
@@ -200,6 +230,9 @@ class FoodLinkRepository extends ChangeNotifier {
   bool get isAuthenticated => _currentDonor != null;
 
   UserRole login(String email, String password) {
+    if (email.trim().isEmpty || password.isEmpty) {
+      throw StateError('Email and password are required.');
+    }
     final normalizedEmail = email.trim();
     final donor = _donors.firstWhere(
       (item) => item.email.toLowerCase() == normalizedEmail.toLowerCase(),
@@ -224,13 +257,17 @@ class FoodLinkRepository extends ChangeNotifier {
     UserRole role = UserRole.donor,
     String? donorType,
   }) {
-    if (role == UserRole.admin) {
-      throw StateError(
-        'Admin accounts cannot be created through registration.',
-      );
+    if (role != UserRole.donor && role != UserRole.ngo) {
+      throw StateError('Only Donor and NGO accounts can register publicly.');
     }
 
     final normalizedEmail = email.trim().toLowerCase();
+    if (fullName.trim().isEmpty ||
+        normalizedEmail.isEmpty ||
+        phone.trim().isEmpty ||
+        password.isEmpty) {
+      throw StateError('Please complete all required fields.');
+    }
     final existing = _donors.any(
       (donor) => donor.email.toLowerCase() == normalizedEmail,
     );
@@ -241,7 +278,7 @@ class FoodLinkRepository extends ChangeNotifier {
     }
 
     final account = Donor(
-      id: 'donor_${DateTime.now().millisecondsSinceEpoch}',
+      id: _generateAccountId(role),
       fullName: fullName.trim(),
       email: email.trim(),
       phone: phone.trim(),
@@ -250,8 +287,55 @@ class FoodLinkRepository extends ChangeNotifier {
       role: role,
     );
     _donors.add(account);
-    _currentDonor = role == UserRole.donor ? account : null;
+    _currentDonor = account;
     notifyListeners();
+  }
+
+  void createAdminAccount({
+    required String fullName,
+    required String email,
+    required String phone,
+    required String password,
+  }) {
+    if (_currentDonor?.role != UserRole.admin) {
+      throw StateError('Only an administrator can create admin accounts.');
+    }
+    if (fullName.trim().isEmpty ||
+        email.trim().isEmpty ||
+        phone.trim().isEmpty ||
+        password.isEmpty) {
+      throw StateError('Please complete all required fields.');
+    }
+
+    final normalizedEmail = email.trim().toLowerCase();
+    final existing = _donors.any(
+      (donor) => donor.email.toLowerCase() == normalizedEmail,
+    );
+    if (existing) {
+      throw StateError('An account with this email already exists.');
+    }
+
+    _donors.add(
+      Donor(
+        id: _generateAccountId(UserRole.admin),
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        password: password,
+        role: UserRole.admin,
+      ),
+    );
+    notifyListeners();
+  }
+
+  String _generateAccountId(UserRole role) {
+    String id;
+    do {
+      id =
+          '${role.name}_${DateTime.now().microsecondsSinceEpoch}_'
+          '${_lastGeneratedAccountId++}';
+    } while (_donors.any((donor) => donor.id == id));
+    return id;
   }
 
   void logout() {
@@ -535,5 +619,112 @@ class FoodLinkRepository extends ChangeNotifier {
       _currentDonor = updatedDonor;
       notifyListeners();
     }
+  }
+
+  void updateNgoProfile({
+    required String fullName,
+    required String description,
+    required String workingArea,
+    required String communitiesServed,
+  }) {
+    final user = _currentDonor;
+    if (user == null || user.role != UserRole.ngo) {
+      throw StateError('Please sign in with an NGO account.');
+    }
+
+    final normalizedName = fullName.trim();
+    final normalizedArea = workingArea.trim();
+    final normalizedDescription = description.trim();
+    if (normalizedName.isEmpty) {
+      throw StateError('NGO name is required.');
+    }
+    if (normalizedArea.isEmpty) {
+      throw StateError('Working area or city is required.');
+    }
+    if (normalizedDescription.length > 300) {
+      throw StateError('Description must be 300 characters or fewer.');
+    }
+
+    final updatedNgo = user.copyWith(
+      fullName: normalizedName,
+      ngoDescription: normalizedDescription,
+      workingArea: normalizedArea,
+      communitiesServed: communitiesServed.trim(),
+    );
+    final index = _donors.indexWhere((donor) => donor.id == user.id);
+    if (index != -1) {
+      _donors[index] = updatedNgo;
+      _currentDonor = updatedNgo;
+      notifyListeners();
+    }
+  }
+
+  List<FoodDonation> get ngoAvailableDonations {
+    final items = _donations.where((donation) {
+      return donation.status == DonationStatus.available &&
+          !DateTimeUtils.isPastDeadline(donation.safeUseDeadline);
+    }).toList();
+
+    items.sort((a, b) => a.safeUseDeadline.compareTo(b.safeUseDeadline));
+
+    return items;
+  }
+
+  List<PickupRequest> get currentNgoPickupRequests {
+    final ngoId = _currentDonor?.id;
+
+    if (_currentDonor?.role != UserRole.ngo || ngoId == null) {
+      return const [];
+    }
+
+    return _pickupRequests.where((request) => request.ngoId == ngoId).toList()
+      ..sort((a, b) => b.submittedAt.compareTo(a.submittedAt));
+  }
+
+  void requestPickup(String donationId) {
+    final user = _currentDonor;
+
+    if (user == null || user.role != UserRole.ngo) {
+      throw StateError('Please sign in with an NGO account.');
+    }
+
+    final donation = donationById(donationId);
+
+    if (donation == null ||
+        donation.status != DonationStatus.available ||
+        DateTimeUtils.isPastDeadline(donation.safeUseDeadline)) {
+      throw StateError('This donation is no longer available.');
+    }
+
+    final alreadyRequested = _pickupRequests.any((request) {
+      return request.donationId == donationId &&
+          request.ngoId == user.id &&
+          (request.status == PickupRequestStatus.pending ||
+              request.status == PickupRequestStatus.approved);
+    });
+
+    if (alreadyRequested) {
+      throw StateError('You have already requested this donation.');
+    }
+
+    _pickupRequests.add(
+      PickupRequest(
+        id: 'req_${DateTime.now().microsecondsSinceEpoch}',
+        donationId: donation.id,
+        ngoId: user.id,
+        ngoName: user.fullName,
+        ngoDescription: user.ngoDescription,
+        ngoWorkingArea: user.workingArea,
+        ngoCommunitiesServed: user.communitiesServed,
+        requestedQuantity: donation.quantity,
+        requestedUnit: donation.quantityUnit,
+        pickupDate: donation.pickupStart,
+        submittedAt: DateTime.now(),
+        message: 'Pickup requested by ${user.fullName}.',
+        status: PickupRequestStatus.pending,
+      ),
+    );
+
+    notifyListeners();
   }
 }

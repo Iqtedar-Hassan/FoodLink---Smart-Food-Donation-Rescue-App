@@ -56,18 +56,19 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     try {
-      final role = widget.repository.login(
-        _emailController.text,
-        _passwordController.text,
-      );
-      if (!mounted) return;
+      final UserRole role;
+      try {
+        role = widget.repository.login(
+          _emailController.text,
+          _passwordController.text,
+        );
+      } on StateError {
+        if (!mounted) return;
 
-      if (role != UserRole.donor) {
-        widget.repository.logout();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Your ${role.label} account was verified, but its dashboard is not available in this build.',
+            content: const Text(
+              'Incorrect email or password. Please try again.',
             ),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -77,6 +78,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
+      if (!mounted) return;
+
+      final destination = switch (role) {
+        UserRole.donor => '/dashboard',
+        UserRole.ngo => '/ngo-dashboard',
+        UserRole.admin => '/admin-dashboard',
+      };
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -87,24 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       );
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/dashboard',
-        (route) => false,
-      );
-    } catch (_) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Incorrect email or password. Please try again.'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+      Navigator.pushNamedAndRemoveUntil(context, destination, (route) => false);
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -879,8 +870,7 @@ class _DemoCredentialsBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Demo donor: ${AppConstants.demoEmail} / '
-              '${AppConstants.demoPassword}',
+              'Demo donor account: ${AppConstants.demoEmail}',
               style: TextStyle(
                 fontSize: 12,
                 color: _LoginScreenState._greenDeep,

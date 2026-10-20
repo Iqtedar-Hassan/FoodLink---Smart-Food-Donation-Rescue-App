@@ -21,7 +21,8 @@ const _phoneWidths = [320.0, 360.0, 375.0, 390.0, 430.0];
 const _tabletWidths = [600.0, 768.0, 834.0, 1024.0];
 
 FoodLinkRepository _loggedInRepo() =>
-    FoodLinkRepository()..login('donor@foodlink.demo', 'Pass1234');
+    FoodLinkRepository()
+      ..login(AppConstants.demoEmail, AppConstants.demoPassword);
 
 /// Pumps [child] at a logical [width]x[height] and asserts that the layout does
 /// not overflow or clip (Flutter throws on RenderFlex overflow, which surfaces
@@ -56,6 +57,30 @@ Future<void> pumpAtSize(
     isNull,
     reason: 'Layout overflow/clipping at ${width}x$height\n$exceptionDetails',
   );
+}
+
+Future<void> _completeSignup(
+  WidgetTester tester, {
+  required UserRole role,
+  required String email,
+}) async {
+  final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+  navigator.pushNamed('/signup', arguments: role);
+  await tester.pumpAndSettle();
+
+  final fields = find.byType(TextFormField);
+  await tester.enterText(fields.at(0), 'Test Organization');
+  await tester.enterText(fields.at(1), email);
+  await tester.enterText(fields.at(2), '+923001112223');
+  await tester.enterText(fields.at(3), 'Pass1234');
+  await tester.enterText(fields.at(4), 'Pass1234');
+  await tester.ensureVisible(find.byType(Checkbox));
+  await tester.tap(find.byType(Checkbox));
+  await tester.ensureVisible(find.text('Create Account'));
+  await tester.tap(find.text('Create Account'));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 800));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -103,6 +128,97 @@ void main() {
     expect(find.text('Registering as NGO'), findsOneWidget);
   });
 
+  testWidgets('Donor signup authenticates and opens donor dashboard', (
+    tester,
+  ) async {
+    final repository = FoodLinkRepository();
+    await tester.pumpWidget(FoodLinkApp(repository: repository));
+    await tester.pumpAndSettle();
+
+    await _completeSignup(
+      tester,
+      role: UserRole.donor,
+      email: 'new-donor@foodlink.demo',
+    );
+
+    expect(repository.currentDonor?.role, UserRole.donor);
+    expect(find.text('DONATION OVERVIEW'), findsOneWidget);
+    tester
+        .state<NavigatorState>(find.byType(Navigator).first)
+        .pushNamed('/admin-dashboard');
+    await tester.pumpAndSettle();
+    expect(
+      find.text('The Donor workspace is not available in this build.'),
+      findsOneWidget,
+    );
+    expect(find.text('Administrator Dashboard'), findsNothing);
+  });
+
+  testWidgets('NGO signup opens NGO dashboard and supports pickup requests', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = FoodLinkRepository();
+    await tester.pumpWidget(FoodLinkApp(repository: repository));
+    await tester.pumpAndSettle();
+
+    await _completeSignup(
+      tester,
+      role: UserRole.ngo,
+      email: 'new-ngo@foodlink.demo',
+    );
+
+    expect(repository.currentDonor?.role, UserRole.ngo);
+    expect(find.text('FoodLink NGO'), findsOneWidget);
+    expect(find.text('new-ngo@foodlink.demo'), findsOneWidget);
+    expect(find.text('Available Donations'), findsOneWidget);
+
+    await tester.tap(find.text('Edit NGO Profile'));
+    await tester.pumpAndSettle();
+    final profileFields = find.byType(TextFormField);
+    await tester.enterText(
+      profileFields.at(1),
+      'Rescuing meals for local families.',
+    );
+    await tester.enterText(profileFields.at(2), 'Islamabad');
+    await tester.enterText(
+      profileFields.at(3),
+      'Low-income families and community kitchens',
+    );
+    await tester.tap(find.text('Save Profile'));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Request Pickup').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Request Pickup').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Request Submitted'), findsOneWidget);
+    expect(repository.currentNgoPickupRequests, hasLength(1));
+
+    await tester.tap(find.byTooltip('Log out'));
+    await tester.pumpAndSettle();
+    expect(repository.isAuthenticated, isFalse);
+    expect(find.text('Welcome back'), findsOneWidget);
+
+    repository.login(AppConstants.demoEmail, AppConstants.demoPassword);
+    tester
+        .state<NavigatorState>(find.byType(Navigator).first)
+        .pushNamed('/pickup-requests');
+    await tester.pumpAndSettle();
+    expect(find.text('Rescuing meals for local families.'), findsOneWidget);
+    expect(find.text('Working area: Islamabad'), findsOneWidget);
+    expect(
+      find.text('Serves: Low-income families and community kitchens'),
+      findsOneWidget,
+    );
+    expect(find.text('Approve'), findsWidgets);
+    expect(find.text('Reject'), findsWidgets);
+  });
+
   testWidgets('Admin selection opens shared login, not registration', (
     tester,
   ) async {
@@ -140,9 +256,57 @@ void main() {
     expect(find.text('DONATION OVERVIEW'), findsOneWidget);
   });
 
-  testWidgets('NGO login does not retain a donor session or open donor area', (
+  testWidgets('Admin login opens the protected admin dashboard', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(800, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = FoodLinkRepository();
+    await tester.pumpWidget(FoodLinkApp(repository: repository));
+    await tester.tap(find.text('Log In'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), 'admin@gmail.com');
+    await tester.enterText(find.byType(TextFormField).at(1), 'Admin@12345');
+    await tester.tap(find.text('Log In'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pumpAndSettle();
+
+    expect(repository.currentDonor?.role, UserRole.admin);
+    expect(find.text('Administrator Dashboard'), findsOneWidget);
+    expect(find.text('Create Admin Account'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Create Admin Account'));
+    await tester.tap(find.text('Create Admin Account'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'Session Administrator');
+    await tester.enterText(fields.at(1), 'session.admin@gmail.com');
+    await tester.enterText(fields.at(2), '+923001112223');
+    await tester.enterText(fields.at(3), 'Admin@12345');
+    await tester.tap(find.text('Create').last);
+    await tester.pumpAndSettle();
+    expect(repository.donors, hasLength(6));
+
+    await tester.tap(find.byTooltip('Log out'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'session.admin@gmail.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'Admin@12345');
+    await tester.tap(find.text('Log In'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pumpAndSettle();
+    expect(repository.currentDonor?.role, UserRole.admin);
+    expect(find.text('Administrator Dashboard'), findsOneWidget);
+  });
+
+  testWidgets('NGO login opens the NGO dashboard', (tester) async {
     final repository = FoodLinkRepository();
     repository.signup(
       fullName: 'Community NGO',
@@ -164,8 +328,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pumpAndSettle();
 
-    expect(repository.isAuthenticated, isFalse);
-    expect(find.textContaining('dashboard is not available'), findsOneWidget);
+    expect(repository.currentDonor?.role, UserRole.ngo);
+    expect(find.text('FoodLink NGO'), findsOneWidget);
+    expect(find.text('Welcome, Community NGO!'), findsOneWidget);
     expect(find.text('DONATION OVERVIEW'), findsNothing);
   });
 
@@ -206,6 +371,16 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('DONATION OVERVIEW'), findsNothing);
+
+    tester
+        .state<NavigatorState>(find.byType(Navigator).first)
+        .pushNamed('/admin-dashboard');
+    await tester.pumpAndSettle();
+    expect(
+      find.text('The NGO workspace is not available in this build.'),
+      findsOneWidget,
+    );
+    expect(find.text('Administrator Dashboard'), findsNothing);
   });
 
   testWidgets('signup route without a role safely returns to role selection', (
@@ -252,9 +427,12 @@ void main() {
     );
     await tester.enterText(
       find.byType(TextFormField).at(0),
-      'donor@foodlink.demo',
+      AppConstants.demoEmail,
     );
-    await tester.enterText(find.byType(TextFormField).at(1), 'Pass1234');
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      AppConstants.demoPassword,
+    );
     await tester.tap(find.text('Log In'));
     await tester.pump();
 
