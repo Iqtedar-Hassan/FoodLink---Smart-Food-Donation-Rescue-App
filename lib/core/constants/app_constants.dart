@@ -1,7 +1,7 @@
 class AppConstants {
   static const String appTitle = 'FoodLink';
-  static const String demoEmail = 'donor@foodlink.demo';
-  static const String demoPassword = 'Pass1234';
+  static const String demoEmail = 'iqtedaronor@gmail.com';
+  static const String demoPassword = 'Pass12345';
 
   /// Donor type options shown at sign-up and on the profile screen.
   static const List<String> donorTypes = [

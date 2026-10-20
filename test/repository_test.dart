@@ -26,6 +26,59 @@ void main() {
       );
     });
 
+    test('all five fixed accounts are seeded once and survive logout', () {
+      final repository = FoodLinkRepository();
+      expect(repository.donors, hasLength(5));
+
+      final fixedAccounts = <(String, String, UserRole)>[
+        ('iqtedaronor@gmail.com', 'Pass12345', UserRole.donor),
+        ('adeeldonor@gmail.com', 'Pass12345', UserRole.donor),
+        ('iqtedarNGO@gmail.com', 'Pass1234', UserRole.ngo),
+        ('adeelNGO@gmail.com', 'Pass1234', UserRole.ngo),
+        ('admin@gmail.com', 'Admin@12345', UserRole.admin),
+      ];
+      for (final (email, password, role) in fixedAccounts) {
+        expect(repository.login(email, password), role);
+        expect(repository.currentDonor?.email, email);
+        repository.logout();
+      }
+
+      expect(repository.donors, hasLength(5));
+      expect(
+        () => repository.login('admin@gmail.com', 'wrong-password'),
+        throwsStateError,
+      );
+      expect(() => repository.login('', 'Pass12345'), throwsStateError);
+      expect(() => repository.login('admin@gmail.com', ''), throwsStateError);
+    });
+
+    test('temporary accounts survive logout but not repository restart', () {
+      final repository = FoodLinkRepository();
+      repository.signup(
+        fullName: 'Temporary Donor',
+        email: 'temporary@foodlink.demo',
+        phone: '+923001112223',
+        password: 'Pass12345',
+      );
+      expect(
+        repository.login('temporary@foodlink.demo', 'Pass12345'),
+        UserRole.donor,
+      );
+      repository.logout();
+      expect(
+        repository.login('temporary@foodlink.demo', 'Pass12345'),
+        UserRole.donor,
+      );
+      repository.logout();
+
+      final restartedRepository = FoodLinkRepository();
+      expect(restartedRepository.donors, hasLength(5));
+      expect(
+        () => restartedRepository.login('temporary@foodlink.demo', 'Pass12345'),
+        throwsStateError,
+      );
+    });
+
     test('NGO role is stored and returned by shared login', () {
       final repository = FoodLinkRepository();
 
@@ -37,7 +90,7 @@ void main() {
         role: UserRole.ngo,
       );
 
-      expect(repository.currentDonor, isNull);
+      expect(repository.currentDonor?.role, UserRole.ngo);
       expect(repository.donors.last.role, UserRole.ngo);
       expect(repository.login('ngo@foodlink.demo', 'Pass1234'), UserRole.ngo);
       expect(repository.currentDonor?.role, UserRole.ngo);
@@ -60,6 +113,45 @@ void main() {
       expect(repository.donors, hasLength(donorCount));
     });
 
+    test('only an authenticated admin can create additional admins', () {
+      final repository = FoodLinkRepository();
+      expect(
+        () => repository.createAdminAccount(
+          fullName: 'Unauthorized Admin',
+          email: 'unauthorized@gmail.com',
+          phone: '+923001112223',
+          password: 'Admin@12345',
+        ),
+        throwsStateError,
+      );
+      expect(repository.donors, hasLength(5));
+
+      repository.login('admin@gmail.com', 'Admin@12345');
+      repository.createAdminAccount(
+        fullName: 'Session Admin',
+        email: 'session.admin@gmail.com',
+        phone: '+923001112223',
+        password: 'Admin@12345',
+      );
+      repository.logout();
+      expect(
+        repository.login('session.admin@gmail.com', 'Admin@12345'),
+        UserRole.admin,
+      );
+      expect(
+        () => repository.createAdminAccount(
+          fullName: 'Duplicate Admin',
+          email: 'ADMIN@gmail.com',
+          phone: '+923004445556',
+          password: 'Admin@12345',
+        ),
+        throwsStateError,
+      );
+      repository.logout();
+
+      expect(FoodLinkRepository().donors, hasLength(5));
+    });
+
     test('signup stores donor type and blocks duplicate emails', () {
       final repository = FoodLinkRepository();
 
@@ -80,6 +172,99 @@ void main() {
           email: AppConstants.demoEmail,
           phone: '+923004445556',
           password: 'Pass1234',
+        ),
+        throwsStateError,
+      );
+    });
+
+    test(
+      'NGO requests are account-specific and active requests are unique',
+      () {
+        final repository = FoodLinkRepository();
+        repository.signup(
+          fullName: 'Community NGO',
+          email: 'ngo@foodlink.demo',
+          phone: '+923001112223',
+          password: 'Pass1234',
+          role: UserRole.ngo,
+        );
+        expect(
+          () => repository.signup(
+            fullName: 'Duplicate Email Donor',
+            email: 'NGO@foodlink.demo',
+            phone: '+923005556667',
+            password: 'Pass1234',
+          ),
+          throwsStateError,
+        );
+
+        repository.requestPickup('don_101');
+
+        expect(repository.currentNgoPickupRequests, hasLength(1));
+        expect(
+          repository.currentNgoPickupRequests.single.ngoId,
+          repository.currentDonor?.id,
+        );
+        expect(() => repository.requestPickup('don_101'), throwsStateError);
+        expect(repository.currentNgoPickupRequests, hasLength(1));
+
+        repository.signup(
+          fullName: 'Community NGO',
+          email: 'second-ngo@foodlink.demo',
+          phone: '+923004445556',
+          password: 'Pass1234',
+          role: UserRole.ngo,
+        );
+        expect(repository.currentNgoPickupRequests, isEmpty);
+      },
+    );
+
+    test('NGO profile is saved and captured on each pickup request', () {
+      final repository = FoodLinkRepository();
+      repository.signup(
+        fullName: 'Community NGO',
+        email: 'ngo@foodlink.demo',
+        phone: '+923001112223',
+        password: 'Pass1234',
+        role: UserRole.ngo,
+      );
+      repository.updateNgoProfile(
+        fullName: 'Community Food Network',
+        description: 'Rescuing meals and supporting local families.',
+        workingArea: 'Islamabad',
+        communitiesServed: 'Low-income families and community kitchens',
+      );
+
+      repository.requestPickup('don_101');
+      final request = repository.currentNgoPickupRequests.single;
+      expect(request.ngoName, 'Community Food Network');
+      expect(
+        request.ngoDescription,
+        'Rescuing meals and supporting local families.',
+      );
+      expect(request.ngoWorkingArea, 'Islamabad');
+      expect(
+        request.ngoCommunitiesServed,
+        'Low-income families and community kitchens',
+      );
+
+      repository.updateNgoProfile(
+        fullName: 'Community Food Network',
+        description: 'Updated description.',
+        workingArea: 'Rawalpindi',
+        communitiesServed: 'Shelters',
+      );
+      expect(
+        request.ngoDescription,
+        'Rescuing meals and supporting local families.',
+      );
+      expect(request.ngoWorkingArea, 'Islamabad');
+      expect(
+        () => repository.updateNgoProfile(
+          fullName: 'Community Food Network',
+          description: 'x' * 301,
+          workingArea: 'Rawalpindi',
+          communitiesServed: '',
         ),
         throwsStateError,
       );
@@ -275,7 +460,7 @@ void main() {
       expect(
         () => repository.updateDonorProfile(
           fullName: 'Ayesha K.',
-          email: 'muneeb@foodlink.demo',
+          email: 'adeeldonor@gmail.com',
           phone: '+923001234567',
         ),
         throwsStateError,

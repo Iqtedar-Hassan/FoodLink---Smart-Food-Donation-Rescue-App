@@ -19,7 +19,11 @@ class PickupRequest {
   PickupRequest({
     required this.id,
     required this.donationId,
+    this.ngoId,
     required this.ngoName,
+    this.ngoDescription = '',
+    this.ngoWorkingArea = '',
+    this.ngoCommunitiesServed = '',
     required this.requestedQuantity,
     required this.requestedUnit,
     required this.pickupDate,
@@ -30,7 +34,11 @@ class PickupRequest {
 
   final String id;
   final String donationId;
+  final String? ngoId;
   final String ngoName;
+  final String ngoDescription;
+  final String ngoWorkingArea;
+  final String ngoCommunitiesServed;
   final num requestedQuantity;
   final String requestedUnit;
   final DateTime pickupDate;

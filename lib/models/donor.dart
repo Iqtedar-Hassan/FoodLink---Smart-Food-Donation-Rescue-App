@@ -9,6 +9,9 @@ class Donor {
     required this.password,
     this.donorType = 'Household',
     this.role = UserRole.donor,
+    this.ngoDescription = '',
+    this.workingArea = '',
+    this.communitiesServed = '',
   });
 
   final String id;
@@ -18,6 +21,9 @@ class Donor {
   final String password;
   final String donorType;
   final UserRole role;
+  final String ngoDescription;
+  final String workingArea;
+  final String communitiesServed;
 
   Donor copyWith({
     String? fullName,
@@ -25,6 +31,9 @@ class Donor {
     String? phone,
     String? donorType,
     UserRole? role,
+    String? ngoDescription,
+    String? workingArea,
+    String? communitiesServed,
   }) {
     return Donor(
       id: id,
@@ -34,6 +43,9 @@ class Donor {
       password: password,
       donorType: donorType ?? this.donorType,
       role: role ?? this.role,
+      ngoDescription: ngoDescription ?? this.ngoDescription,
+      workingArea: workingArea ?? this.workingArea,
+      communitiesServed: communitiesServed ?? this.communitiesServed,
     );
   }
 }

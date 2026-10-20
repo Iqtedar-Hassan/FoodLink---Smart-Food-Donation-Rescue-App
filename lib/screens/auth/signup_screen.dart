@@ -83,22 +83,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!mounted) return;
 
     try {
-      widget.repository.signup(
-        fullName: _fullNameController.text,
-        email: _emailController.text,
-        phone: _phoneController.text,
-        password: _passwordController.text,
-        role: widget.role,
-        donorType: widget.role == UserRole.donor ? _donorType : null,
-      );
+      try {
+        widget.repository.signup(
+          fullName: _fullNameController.text,
+          email: _emailController.text,
+          phone: _phoneController.text,
+          password: _passwordController.text,
+          role: widget.role,
+          donorType: widget.role == UserRole.donor ? _donorType : null,
+        );
+      } on StateError catch (error) {
+        if (!mounted) return;
+
+        final message = error.toString().contains('already exists')
+            ? 'This email is already registered. Please use a different email address.'
+            : 'Unable to create your account right now. Please try again.';
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            widget.role == UserRole.donor ? 'Account created successfully.' : 'NGO account registered. The NGO dashboard is not available in this build.',
-          ),
+          content: const Text('Account created successfully.'),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -108,24 +125,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       Navigator.pushNamedAndRemoveUntil(
         context,
-        widget.role == UserRole.donor ? '/dashboard' : '/login',
+        widget.role == UserRole.donor ? '/dashboard' : '/ngo-dashboard',
         (route) => false,
-      );
-    } catch (error) {
-      if (!mounted) return;
-
-      final message = error.toString().contains('already exists')
-          ? 'This email is already registered. Please use a different email address.'
-          : 'Unable to create your account right now. Please try again.';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
       );
     } finally {
       if (mounted) {
